@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIRE コックピット — クラウド同期版</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Noto+Serif+JP:wght@300;400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#04080c; --p1:#0a1420; --p2:#0e1c2c; --p3:#122030;
+  --br:#142030; --br2:#1c2e42; --br3:#243a52;
+  --fire:#ff6b35; --fire2:#ff9a65; --fire-bg:rgba(255,107,53,0.08);
+  --gold:#d4a843; --gold2:#f0c866; --gold-bg:rgba(212,168,67,0.08);
+  --teal:#2dd4bf; --teal2:#5eead4; --teal-bg:rgba(45,212,191,0.07);
+  --green:#22c55e; --green2:#4ade80; --green-bg:rgba(34,197,94,0.08);
+  --red:#ef4444; --red2:#f87171; --red-bg:rgba(239,68,68,0.08);
+  --warn:#f59e0b; --warn2:#fbbf24; --warn-bg:rgba(245,158,11,0.08);
+  --inv:#a855f7; --inv2:#c084fc;
+  --text:#e2eaf4; --t2:#7a9ab8; --t3:#3a5a78; --t4:#1e3550;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;
+  background-image:radial-gradient(ellipse 140% 70% at 50% -5%,rgba(212,168,67,0.04) 0%,transparent 55%);}
+
+.app{max-width:1400px;margin:0 auto;padding:24px 18px 80px;}
+
+/* ── SYNC STATUS BAR ── */
+.sync-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 16px;background:var(--p1);border:1px solid var(--br);
+  margin-bottom:16px;flex-wrap:wrap;gap:10px;
+}
+.sync-left{display:flex;align-items:center;gap:12px;}
+.sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sync-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green);}
+.sync-dot.syncing{background:var(--warn);animation:pulse 1s infinite;}
+.sync-dot.error{background:var(--red);}
+.sync-dot.local{background:var(--t3);}
+.sync-status{font-size:10px;color:var(--t2);letter-spacing:1px;}
+.sync-time{font-size:9px;color:var(--t3);}
+.sync-right{display:flex;gap:8px;align-items:center;}
+.sync-btn{
+  padding:4px 12px;background:transparent;border:1px solid var(--br2);
+  color:var(--t2);font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;
+}
+.sync-btn:hover{border-color:var(--teal);color:var(--teal);}
+.setup-btn{border-color:var(--gold);color:var(--gold);}
+.setup-btn:hover{background:var(--gold-bg);}
+
+/* ── SETUP MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.modal-overlay.hidden{display:none;}
+.modal{
+  background:var(--p1);border:1px solid var(--br2);
+  width:100%;max-width:640px;padding:28px;
+}
+.modal-title{font-family:'Noto Serif JP',serif;font-size:16px;letter-spacing:2px;
+  color:var(--gold);margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--br);}
+.setup-steps{display:flex;flex-direction:column;gap:14px;margin-bottom:20px;}
+.step{display:flex;gap:12px;}
+.step-num{
+  width:24px;height:24px;border:1px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--gold);flex-shrink:0;
+}
+.step-body{flex:1;}
+.step-title{font-size:12px;color:var(--text);margin-bottom:4px;}
+.step-desc{font-size:10px;color:var(--t2);line-height:1.7;}
+.step-desc a{color:var(--teal);text-decoration:none;}
+.step-desc code{
+  background:var(--p2);padding:1px 6px;font-size:10px;
+  border:1px solid var(--br2);color:var(--gold2);
+}
+.url-input-wrap{margin-top:16px;}
+.url-label{font-size:10px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:6px;}
+.url-inp{
+  width:100%;background:var(--p2);border:1px solid var(--br2);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:11px;padding:10px 12px;outline:none;
+  transition:border-color .2s;
+}
+.url-inp:focus{border-color:var(--gold);}
+.url-inp::placeholder{color:var(--t3);}
+.modal-btns{display:flex;gap:10px;margin-top:16px;}
+.modal-btn{
+  flex:1;padding:10px;background:transparent;
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;
+}
+.modal-btn.primary{border:1px solid var(--gold);color:var(--gold);}
+.modal-btn.primary:hover{background:var(--gold-bg);}
+.modal-btn.secondary{border:1px solid var(--br2);color:var(--t2);}
+.modal-btn.secondary:hover{border-color:var(--t2);}
+.test-result{
+  margin-top:10px;padding:8px 12px;font-size:10px;border:1px solid;
+  min-height:36px;display:none;
+}
+.test-result.ok{border-color:var(--green);color:var(--green);background:var(--green-bg);display:block;}
+.test-result.err{border-color:var(--red);color:var(--red2);background:var(--red-bg);display:block;}
+
+/* ── TOPBAR ── */
+.topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--br);}
+.topbar-left{display:flex;flex-direction:column;gap:4px;}
+.topbar-date{font-size:10px;letter-spacing:3px;color:var(--t3);}
+.topbar-greeting{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:600;letter-spacing:1px;}
+.topbar-center{text-align:center;}
+.fire-cd{font-family:'Rajdhani',sans-serif;font-size:52px;font-weight:700;line-height:1;
+  background:linear-gradient(135deg,var(--fire2),var(--fire),#c03000);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.fire-cd-label{font-size:9px;letter-spacing:4px;color:var(--t3);text-transform:uppercase;margin-top:4px;}
+.topbar-right{display:flex;justify-content:flex-end;align-items:center;gap:10px;}
+.scenario-pill{padding:5px 14px;border:1px solid;font-size:9px;letter-spacing:2px;text-transform:uppercase;}
+.pill-opt{border-color:var(--gold);color:var(--gold);}
+.pill-std{border-color:var(--teal);color:var(--teal);}
+.pill-con{border-color:var(--red);color:var(--red);}
+
+/* ── MISSION BAR ── */
+.mission-bar{
+  background:linear-gradient(90deg,rgba(212,168,67,.06),rgba(45,212,191,.04),transparent);
+  border:1px solid var(--br2);border-left:3px solid var(--gold);
+  padding:12px 20px;margin-bottom:18px;
+  display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+}
+.mp{flex:1;min-width:160px;}
+.mp-label{font-size:9px;color:var(--t3);letter-spacing:2px;margin-bottom:4px;}
+.mp-track{height:3px;background:var(--br3);overflow:hidden;}
+.mp-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--fire));transition:width 1s cubic-bezier(.4,0,.2,1);}
+.mp-meta{display:flex;justify-content:space-between;font-size:9px;color:var(--t3);margin-top:3px;}
+.fire-eta-chip{padding:4px 14px;background:var(--fire-bg);border:1px solid rgba(255,107,53,.3);
+  font-size:10px;color:var(--fire2);letter-spacing:1px;white-space:nowrap;}
+
+/* ── MAIN GRID ── */
+.grid-main{display:grid;grid-template-columns:360px 1fr 280px;gap:16px;margin-bottom:16px;}
+.grid-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.grid-wide{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+/* ── PANEL ── */
+.panel{background:var(--p1);border:1px solid var(--br);padding:18px;}
+.panel-hd{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--br);}
+.panel-title{font-family:'Noto Serif JP',serif;font-size:12px;letter-spacing:2px;
+  display:flex;align-items:center;gap:7px;}
+.pdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.panel-meta{font-size:9px;color:var(--t3);}
+
+/* ── HABITS ── */
+.habit-list{display:flex;flex-direction:column;gap:5px;}
+.habit-item{display:flex;align-items:flex-start;gap:10px;padding:9px 10px;
+  border:1px solid var(--br2);cursor:pointer;transition:all .15s;position:relative;overflow:hidden;}
+.habit-item:hover{border-color:var(--br3);}
+.habit-item.done{background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.2);}
+.habit-item.done::after{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--green);}
+.habit-item.saving{opacity:.6;pointer-events:none;}
+.hchk{width:16px;height:16px;border:1px solid var(--br3);flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.habit-item.done .hchk{background:var(--green);border-color:var(--green);}
+.hchk-mark{color:#000;font-size:10px;opacity:0;}
+.habit-item.done .hchk-mark{opacity:1;}
+.hbody{flex:1;}
+.hlabel{font-size:11px;line-height:1.4;}
+.habit-item.done .hlabel{color:var(--t2);}
+.hsub{font-size:9px;color:var(--t3);margin-top:2px;}
+.htag{font-size:8px;padding:1px 6px;border:1px solid;text-transform:uppercase;white-space:nowrap;flex-shrink:0;}
+.tag-fx{color:var(--gold);border-color:var(--gold);}
+.tag-invest{color:var(--inv2);border-color:var(--inv2);}
+.tag-review{color:var(--teal);border-color:var(--teal);}
+.tag-life{color:var(--green2);border-color:var(--green2);}
+.tag-fire{color:var(--fire2);border-color:var(--fire2);}
+.habits-prog{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--br);}
+.hp-track{flex:1;height:4px;background:var(--br2);overflow:hidden;}
+.hp-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--teal));transition:width .4s;}
+.hp-label{font-size:10px;color:var(--t2);white-space:nowrap;}
+.hp-pct{font-size:14px;color:var(--green);min-width:36px;text-align:right;}
+
+/* ── FX CHECKLIST ── */
+.fxc-sect{margin-bottom:12px;}
+.fxc-sect-title{font-size:9px;letter-spacing:3px;color:var(--t3);text-transform:uppercase;
+  margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--br);}
+.fxc-items{display:flex;flex-direction:column;gap:3px;}
+.fxc-item{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;cursor:pointer;transition:background .1s;}
+.fxc-item:hover{background:rgba(255,255,255,.01);}
+.fxc-item.checked{opacity:.55;}
+.fxc-box{width:14px;height:14px;border:1px solid var(--br3);flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.fxc-item.checked .fxc-box{background:var(--gold);border-color:var(--gold);}
+.fxc-box span{font-size:9px;color:#000;opacity:0;}
+.fxc-item.checked .fxc-box span{opacity:1;}
+.fxc-text{font-size:11px;line-height:1.5;}
+.fxc-item.checked .fxc-text{color:var(--t3);}
+.fxc-note{font-size:9px;color:var(--t3);margin-top:1px;}
+.fxc-go{width:100%;margin-top:12px;padding:11px;
+  background:linear-gradient(135deg,rgba(212,168,67,.15),rgba(212,168,67,.06));
+  border:1px solid var(--gold);color:var(--gold);
+  font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;
+  letter-spacing:3px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.fxc-go:hover{background:rgba(212,168,67,.25);}
+.fxc-go.disabled{opacity:.3;cursor:not-allowed;pointer-events:none;}
+.fxc-count{font-size:9px;color:var(--t2);text-align:center;margin-top:5px;}
+
+/* ── MONTHLY INPUT ── */
+.mf{display:flex;flex-direction:column;gap:10px;}
+.mf-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.mf-field{display:flex;flex-direction:column;gap:4px;}
+.mf-label{font-size:9px;letter-spacing:1px;color:var(--t3);text-transform:uppercase;}
+.mf-inp{background:var(--p2);border:1px solid var(--br2);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;outline:none;transition:border-color .2s;}
+.mf-inp:focus{border-color:var(--gold);}
+.mf-save{padding:9px;background:transparent;border:1px solid var(--teal);color:var(--teal);
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;
+  transition:all .2s;text-transform:uppercase;}
+.mf-save:hover{background:var(--teal-bg);}
+.mf-status{font-size:9px;color:var(--green);text-align:center;min-height:14px;}
+.alert-box{padding:9px 12px;border:1px solid;display:flex;gap:8px;align-items:flex-start;margin-top:6px;}
+.alert-box.danger{border-color:rgba(239,68,68,.4);background:var(--red-bg);}
+.alert-box.warn{border-color:rgba(245,158,11,.4);background:var(--warn-bg);}
+.alert-box.ok{border-color:rgba(34,197,94,.4);background:var(--green-bg);}
+.alert-icon{font-size:13px;flex-shrink:0;}
+.alert-text{font-size:10px;line-height:1.6;color:var(--t2);}
+.alert-text strong{color:var(--text);}
+
+/* ── FIRE STATS ── */
+.fstat{display:flex;flex-direction:column;gap:3px;padding:10px 12px;
+  background:var(--p2);border:1px solid var(--br2);margin-bottom:7px;}
+.fstat-label{font-size:8px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;}
+.fstat-val{font-size:18px;font-weight:300;}
+.fstat-note{font-size:9px;color:var(--t2);}
+.fstat-track{height:3px;background:var(--br3);margin-top:4px;overflow:hidden;}
+.fstat-fill{height:100%;transition:width .8s cubic-bezier(.4,0,.2,1);}
+
+/* ── STREAK ── */
+.streak-grid{display:flex;flex-wrap:wrap;gap:3px;}
+.streak-day{width:16px;height:16px;border-radius:2px;background:var(--br2);
+  cursor:default;position:relative;}
+.streak-day:hover::after{content:attr(data-tip);position:absolute;bottom:20px;left:50%;
+  transform:translateX(-50%);background:var(--p2);border:1px solid var(--br3);
+  color:var(--text);font-size:9px;padding:3px 6px;white-space:nowrap;z-index:10;pointer-events:none;}
+.l0{background:var(--br2);}
+.l1{background:rgba(212,168,67,.2);}
+.l2{background:rgba(212,168,67,.45);}
+.l3{background:var(--gold);}
+.l4{background:var(--fire);}
+.streak-legend{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:9px;color:var(--t3);}
+.sl-dot{width:10px;height:10px;border-radius:1px;}
+
+/* ── WEEKLY REVIEW ── */
+.review-form{display:flex;flex-direction:column;gap:9px;}
+.review-q-label{font-size:9px;letter-spacing:2px;color:var(--t2);text-transform:uppercase;
+  display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.qnum{width:18px;height:18px;border:1px solid var(--br3);display:flex;align-items:center;
+  justify-content:center;font-size:9px;color:var(--t3);flex-shrink:0;}
+.review-ta{background:var(--p2);border:1px solid var(--br2);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:10px;padding:8px 10px;resize:vertical;
+  min-height:48px;outline:none;line-height:1.6;transition:border-color .2s;width:100%;}
+.review-ta:focus{border-color:var(--teal);}
+.rating-btns{display:flex;gap:6px;margin-top:3px;}
+.rbt{width:28px;height:28px;border:1px solid var(--br3);background:transparent;
+  color:var(--t3);font-size:11px;cursor:pointer;transition:all .15s;font-family:'DM Mono',monospace;}
+.rbt:hover,.rbt.sel{border-color:var(--gold);color:var(--gold);background:var(--gold-bg);}
+.review-save{padding:9px;background:transparent;border:1px solid var(--inv);color:var(--inv2);
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;
+  transition:all .2s;text-transform:uppercase;width:100%;}
+.review-save:hover{background:rgba(168,85,247,.1);}
+.past-reviews{display:flex;flex-direction:column;gap:5px;margin-top:10px;max-height:160px;overflow-y:auto;}
+.pr-item{padding:7px 10px;background:var(--p2);border:1px solid var(--br2);font-size:10px;color:var(--t2);}
+.pr-date{font-size:8px;color:var(--t3);letter-spacing:2px;margin-bottom:3px;}
+
+/* ── DAILY LOG ── */
+.dle-entries{display:flex;flex-direction:column;gap:5px;max-height:140px;overflow-y:auto;margin-bottom:8px;}
+.dle-item{padding:6px 10px;background:var(--p2);border-left:2px solid;font-size:10px;color:var(--t2);line-height:1.5;}
+.dle-time{font-size:8px;color:var(--t3);margin-bottom:2px;}
+.daily-add{display:flex;gap:6px;}
+.daily-inp{flex:1;background:var(--p2);border:1px solid var(--br2);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:11px;padding:6px 10px;outline:none;transition:border-color .2s;}
+.daily-inp:focus{border-color:var(--teal);}
+.daily-add-btn{padding:6px 14px;background:transparent;border:1px solid var(--teal);
+  color:var(--teal);cursor:pointer;font-size:12px;transition:all .15s;}
+.daily-add-btn:hover{background:var(--teal-bg);}
+
+/* ── FX MINI LOG ── */
+.fxml-row{display:flex;justify-content:space-between;align-items:center;
+  padding:6px 8px;border-bottom:1px solid rgba(20,32,48,.8);font-size:10px;}
+.fxml-row:hover{background:rgba(255,255,255,.01);}
+.fxml-month{color:var(--t2);}
+.fxml-pnl.pos{color:var(--green2);font-weight:500;}
+.fxml-pnl.neg{color:var(--red2);font-weight:500;}
+.fxml-badge{font-size:8px;padding:1px 6px;border:1px solid;}
+.fxml-ok{color:var(--green);border-color:var(--green);}
+.fxml-near{color:var(--gold);border-color:var(--gold);}
+.fxml-ng{color:var(--red);border-color:var(--red);}
+
+/* ── ROADMAP ── */
+.rm-item{display:grid;grid-template-columns:72px 14px 1fr;gap:0 10px;}
+.rm-year{font-size:11px;padding-top:12px;text-align:right;}
+.rm-spine{display:flex;flex-direction:column;align-items:center;}
+.rm-dot{width:8px;height:8px;border-radius:50%;margin-top:14px;flex-shrink:0;}
+.rm-line{flex:1;width:1px;background:var(--br2);}
+.rm-body{padding:10px 0 14px;}
+.rm-label{font-family:'Noto Serif JP',serif;font-size:12px;letter-spacing:1px;margin-bottom:4px;}
+.rm-tasks{display:flex;flex-direction:column;gap:2px;}
+.rm-task{font-size:10px;color:var(--t2);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--p2);border:1px solid var(--gold);
+  color:var(--gold);padding:10px 18px;font-size:10px;letter-spacing:2px;
+  transform:translateY(50px);opacity:0;transition:all .3s;pointer-events:none;z-index:200;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--green);margin-right:5px;animation:pulse 2s infinite;}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.spinning{animation:spin .8s linear infinite;display:inline-block;}
+
+@media(max-width:1100px){.grid-main{grid-template-columns:1fr 1fr;}.grid-bottom{grid-template-columns:1fr 1fr;}}
+@media(max-width:700px){.grid-main,.grid-bottom,.grid-wide{grid-template-columns:1fr;}
+  .fire-cd{font-size:36px;}.topbar{grid-template-columns:1fr;gap:10px;}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ══ SETUP MODAL ══ -->
+<div class="modal-overlay" id="setupModal">
+<div class="modal">
+  <div class="modal-title">クラウド同期のセットアップ</div>
+  <div class="setup-steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Google スプレッドシートを新規作成</div>
+        <div class="step-desc">
+          <a href="https://sheets.new" target="_blank">sheets.new</a> を開いて新しいスプレッドシートを作成します。<br>
+          URLの <code>/d/XXXXXX/edit</code> の <code>XXXXXX</code> 部分がスプレッドシートIDです。
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Apps Script を開いてコードを貼り付け</div>
+        <div class="step-desc">
+          スプレッドシートで「拡張機能」→「Apps Script」を開きます。<br>
+          別ファイル <code>gas_backend.js</code> の中身を全選択してエディタに貼り付けます。<br>
+          <code>SPREADSHEET_ID</code> を手順1で確認したIDに書き換えて保存します。
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">testSetup() を実行してシートを初期化</div>
+        <div class="step-desc">
+          Apps Script エディタで関数選択リストから <code>testSetup</code> を選んで▶実行します。<br>
+          初回は権限の確認が出るので「許可」をクリックします。
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">ウェブアプリとしてデプロイ</div>
+        <div class="step-desc">
+          「デプロイ」→「新しいデプロイ」→「ウェブアプリ」を選択。<br>
+          実行者: <code>自分</code>、アクセスできるユーザー: <code>全員</code> に設定して「デプロイ」。<br>
+          表示されたURLをコピーして下のボックスに貼り付けます。
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="url-input-wrap">
+    <div class="url-label">Apps Script デプロイURL</div>
+    <input type="text" class="url-inp" id="scriptUrlInput"
+      placeholder="https://script.google.com/macros/s/XXXXXX/exec" />
+  </div>
+  <div class="test-result" id="testResult"></div>
+  <div class="modal-btns">
+    <button class="modal-btn secondary" onclick="skipSetup()">あとで設定（ローカルモードで使う）</button>
+    <button class="modal-btn primary" onclick="testAndSaveUrl()">接続テスト → 保存</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ SYNC BAR ══ -->
+<div class="sync-bar">
+  <div class="sync-left">
+    <div class="sync-dot local" id="syncDot"></div>
+    <div class="sync-status" id="syncStatus">ローカルモード</div>
+    <div class="sync-time" id="syncTime"></div>
+  </div>
+  <div class="sync-right">
+    <button class="sync-btn" onclick="forcSync()"><span id="syncBtnIcon">↻</span> 今すぐ同期</button>
+    <button class="sync-btn setup-btn" onclick="openSetup()">⚙ 設定</button>
+  </div>
+</div>
+
+<!-- ══ TOPBAR ══ -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-date" id="topDate"></div>
+    <div class="topbar-greeting" id="topGreet"></div>
+  </div>
+  <div class="topbar-center">
+    <div class="fire-cd" id="fireCd">―</div>
+    <div class="fire-cd-label">days to FIRE / 2033.01.01</div>
+  </div>
+  <div class="topbar-right">
+    <div class="scenario-pill pill-std" id="scenarioPill">SCENARIO: ―</div>
+  </div>
+</div>
+
+<!-- ══ MISSION BAR ══ -->
+<div class="mission-bar">
+  <div>
+    <div style="font-size:8px;letter-spacing:3px;color:var(--t3);text-transform:uppercase;margin-bottom:3px;">TODAY'S MISSION</div>
+    <div style="font-size:11px;color:var(--gold2);letter-spacing:2px;">毎日の習慣を完了させ、FIREへの一歩を刻む</div>
+  </div>
+  <div class="mp">
+    <div class="mp-label">資産進捗 — 楽観目標 1.2億</div>
+    <div class="mp-track"><div class="mp-fill" id="mpFill" style="width:0%"></div></div>
+    <div class="mp-meta"><span id="mpLeft">5,524万</span><span>12,000万</span></div>
+  </div>
+  <div class="fire-eta-chip" id="etaChip">標準 FIRE: 計算中</div>
+</div>
+
+<!-- ══ MAIN GRID ══ -->
+<div class="grid-main">
+
+  <!-- 習慣 -->
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title"><div class="pdot" style="background:var(--green)"></div>今日のタスク</div>
+      <div class="panel-meta"><span class="live-dot"></span><span id="habitDateLabel"></span></div>
+    </div>
+    <div class="habit-list" id="habitList"></div>
+    <div class="habits-prog">
+      <div class="hp-track"><div class="hp-fill" id="hpFill" style="width:0%"></div></div>
+      <div class="hp-label">達成率</div>
+      <div class="hp-pct" id="hpPct">0%</div>
+    </div>
+  </div>
+
+  <!-- FXチェック + 月次入力 -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="panel">
+      <div class="panel-hd">
+        <div class="panel-title"><div class="pdot" style="background:var(--gold)"></div>FXトレード前チェックリスト</div>
+        <div class="panel-meta" id="fxcReadyLabel">―</div>
+      </div>
+      <div class="fxc-sect">
+        <div class="fxc-sect-title">マーケット確認</div>
+        <div class="fxc-items" id="fxcMarket"></div>
+      </div>
+      <div class="fxc-sect">
+        <div class="fxc-sect-title">テクニカル確認 (GOLD/USD 5分足)</div>
+        <div class="fxc-items" id="fxcTech"></div>
+      </div>
+      <div class="fxc-sect">
+        <div class="fxc-sect-title">リスク管理</div>
+        <div class="fxc-items" id="fxcRisk"></div>
+      </div>
+      <button class="fxc-go disabled" id="fxcGoBtn" onclick="onFxGo()">▶ エントリー可能 — トレード開始</button>
+      <div class="fxc-count" id="fxcCount">0 / 12 チェック完了</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hd">
+        <div class="panel-title"><div class="pdot" style="background:var(--teal)"></div>月次データ入力</div>
+        <div class="panel-meta" id="monthLabel"></div>
+      </div>
+      <div class="mf">
+        <div class="mf-row">
+          <div class="mf-field"><div class="mf-label">FX月間損益（円）</div>
+            <input type="number" class="mf-inp" id="miFx" placeholder="例: 245000" /></div>
+          <div class="mf-field"><div class="mf-label">月間支出（万円）</div>
+            <input type="number" class="mf-inp" id="miExp" placeholder="例: 62" /></div>
+        </div>
+        <div class="mf-row">
+          <div class="mf-field"><div class="mf-label">資産総額（万円）</div>
+            <input type="number" class="mf-inp" id="miAsset" placeholder="例: 5800" /></div>
+          <div class="mf-field"><div class="mf-label">FX勝率（%）</div>
+            <input type="number" class="mf-inp" id="miWr" placeholder="例: 58" /></div>
+        </div>
+        <button class="mf-save" onclick="saveMonthly()">保存 → クラウドへ同期</button>
+        <div class="mf-status" id="mfStatus"></div>
+        <div id="monthlyAlert"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIRE Stats -->
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title"><div class="pdot" style="background:var(--fire)"></div>FIREステータス</div>
+    </div>
+    <div id="fireStats"></div>
+  </div>
+
+</div>
+
+<!-- ══ BOTTOM GRID ══ -->
+<div class="grid-bottom">
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title"><div class="pdot" style="background:var(--warn)"></div>習慣ストリーク（過去90日）</div>
+      <div class="panel-meta" id="streakLabel">連続 0日</div>
+    </div>
+    <div class="streak-grid" id="streakGrid"></div>
+    <div class="streak-legend">
+      <span>少</span>
+      <div class="sl-dot l0"></div><div class="sl-dot l1"></div>
+      <div class="sl-dot l2"></div><div class="sl-dot l3"></div><div class="sl-dot l4"></div>
+      <span>多</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title"><div class="pdot" style="background:var(--inv)"></div>週次振り返り</div>
+      <div class="panel-meta" id="reviewWeekLabel"></div>
+    </div>
+    <div class="review-form">
+      <div>
+        <div class="review-q-label"><div class="qnum">1</div>今週のFX成果・気づき</div>
+        <textarea class="review-ta" id="rq1" placeholder="良かったトレード、悪かったパターン..."></textarea>
+      </div>
+      <div>
+        <div class="review-q-label"><div class="qnum">2</div>来週の改善点・やること</div>
+        <textarea class="review-ta" id="rq2" placeholder="エントリールールの修正、練習する場面..."></textarea>
+      </div>
+      <div>
+        <div class="review-q-label"><div class="qnum">3</div>自己評価</div>
+        <div class="rating-btns" id="ratingBtns"></div>
+      </div>
+      <button class="review-save" onclick="saveReview()">週次記録を保存 → クラウドへ同期</button>
+    </div>
+    <div class="past-reviews" id="pastReviews"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title"><div class="pdot" style="background:var(--teal)"></div>デイリーメモ</div>
+    </div>
+    <div class="dle-entries" id="dleEntries"></div>
+    <div class="daily-add">
+      <input type="text" class="daily-inp" id="dailyInp" placeholder="気づき・メモを追加..." />
+      <button class="daily-add-btn" onclick="addDaily()">+</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WIDE ══ -->
+<div class="grid-wide">
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title"><div class="pdot" style="background:var(--gold)"></div>FX月次ログ</div>
+      <div class="panel-meta">目標 月30万円</div>
+    </div>
+    <div id="fxMiniLog" style="display:flex;flex-direction:column;">
+      <div style="padding:20px;text-align:center;color:var(--t3);font-size:10px;">月次データを入力すると表示されます</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title"><div class="pdot" style="background:var(--fire)"></div>FIREロードマップ</div>
+    </div>
+    <div id="roadmapList"></div>
+  </div>
+</div>
+
+</div><!-- /app -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// CONFIG & STORAGE
+// ══════════════════════════════════════════════════
+const FIRE_DATE = new Date('2033-01-01');
+const ASSET_NOW = 5524;
+const FIRE_TARGET1 = 12000;
+const TARGET_FX = 300000;
+const STORAGE_KEY_URL = 'fire_gas_url';
+const STORAGE_KEY_LOCAL = 'fire_local_v3';
+
+let gasUrl = localStorage.getItem(STORAGE_KEY_URL) || '';
+let localData = (() => {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY_LOCAL)) || {}; }
+  catch(e) { return {}; }
+})();
+
+function saveLocal() {
+  localStorage.setItem(STORAGE_KEY_LOCAL, JSON.stringify(localData));
+}
+
+function today()     { return new Date().toISOString().slice(0,10); }
+function thisMonth() { return new Date().toISOString().slice(0,7); }
+function thisWeek()  {
+  const d=new Date(), day=d.getDay();
+  const mon=new Date(d); mon.setDate(d.getDate()-(day===0?6:day-1));
+  return mon.toISOString().slice(0,10);
+}
+
+// ══════════════════════════════════════════════════
+// GAS API
+// ══════════════════════════════════════════════════
+async function gasGet(params) {
+  if (!gasUrl) return null;
+  const url = gasUrl + '?' + new URLSearchParams({...params}).toString();
+  const res = await fetch(url, {mode:'cors'});
+  const json = await res.json();
+  return json.success ? json.data : null;
+}
+
+async function gasPost(body) {
+  if (!gasUrl) return null;
+  const res = await fetch(gasUrl, {
+    method:'POST', mode:'cors',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body),
+  });
+  const json = await res.json();
+  return json.success ? json.data : null;
+}
+
+async function pingGas() {
+  if (!gasUrl) return false;
+  try {
+    const r = await gasGet({action:'ping'});
+    return r && r.ok;
+  } catch(e) { return false; }
+}
+
+// ══════════════════════════════════════════════════
+// SYNC LAYER  — ローカル優先、クラウドに書き込み
+// ══════════════════════════════════════════════════
+function setSyncStatus(status, msg, time) {
+  const dot = document.getElementById('syncDot');
+  const st  = document.getElementById('syncStatus');
+  const tm  = document.getElementById('syncTime');
+  dot.className = 'sync-dot ' + status;
+  st.textContent = msg;
+  if (time) tm.textContent = '最終同期: ' + time;
+}
+
+async function syncToCloud(sheet, data) {
+  if (!gasUrl) return;
+  setSyncStatus('syncing', 'クラウドへ同期中...');
+  try {
+    await gasPost({ action:'write', sheet, data });
+    setSyncStatus('ok', 'クラウド同期済み', new Date().toLocaleTimeString('ja-JP'));
+  } catch(e) {
+    setSyncStatus('error', '同期エラー — ローカル保存済み');
+  }
+}
+
+async function syncFromCloud(sheet) {
+  if (!gasUrl) return null;
+  try {
+    return await gasGet({ action:'read', sheet });
+  } catch(e) { return null; }
+}
+
+async function forcSync() {
+  if (!gasUrl) { showToast('先にセットアップが必要です'); openSetup(); return; }
+  const icon = document.getElementById('syncBtnIcon');
+  icon.className = 'spinning'; icon.textContent = '↻';
+  setSyncStatus('syncing', '同期中...');
+  const ok = await pingGas();
+  icon.className = ''; icon.textContent = '↻';
+  if (ok) {
+    setSyncStatus('ok', 'クラウド接続OK', new Date().toLocaleTimeString('ja-JP'));
+    await loadAllFromCloud();
+    showToast('クラウドから最新データを取得しました');
+  } else {
+    setSyncStatus('error', '接続エラー — ローカルモードで動作中');
+    showToast('クラウド接続に失敗しました');
+  }
+}
+
+async function loadAllFromCloud() {
+  const [monthly, habits, reviews] = await Promise.all([
+    syncFromCloud('FX月次'),
+    syncFromCloud('習慣記録'),
+    syncFromCloud('週次振り返り'),
+  ]);
+  if (monthly) { localData.monthly = monthly; saveLocal(); }
+  if (habits)  { localData.habits  = habits;  saveLocal(); }
+  if (reviews) { localData.reviews = reviews; saveLocal(); }
+  buildAll();
+}
+
+// ══════════════════════════════════════════════════
+// SETUP MODAL
+// ══════════════════════════════════════════════════
+function openSetup() {
+  document.getElementById('setupModal').classList.remove('hidden');
+  if (gasUrl) document.getElementById('scriptUrlInput').value = gasUrl;
+}
+
+function skipSetup() {
+  document.getElementById('setupModal').classList.add('hidden');
+  setSyncStatus('local', 'ローカルモード（クラウド未設定）');
+}
+
+async function testAndSaveUrl() {
+  const url = document.getElementById('scriptUrlInput').value.trim();
+  if (!url || !url.startsWith('https://script.google.com')) {
+    showTestResult(false, 'URLが正しくありません。Apps Script のデプロイURLを貼り付けてください。');
+    return;
+  }
+  gasUrl = url;
+  showTestResult(null, 'テスト中...');
+  const ok = await pingGas();
+  if (ok) {
+    localStorage.setItem(STORAGE_KEY_URL, url);
+    showTestResult(true, '✓ 接続成功！データの同期が有効になりました。');
+    setSyncStatus('ok', 'クラウド同期済み', new Date().toLocaleTimeString('ja-JP'));
+    setTimeout(() => {
+      document.getElementById('setupModal').classList.add('hidden');
+      loadAllFromCloud();
+    }, 1500);
+  } else {
+    gasUrl = localStorage.getItem(STORAGE_KEY_URL) || '';
+    showTestResult(false, '接続失敗。URLを確認してください。デプロイ設定でアクセスを「全員」にしているか確認してください。');
+  }
+}
+
+function showTestResult(ok, msg) {
+  const el = document.getElementById('testResult');
+  el.className = 'test-result ' + (ok===true?'ok':ok===false?'err':'');
+  el.style.display = 'block';
+  el.textContent = msg;
+}
+
+// ══════════════════════════════════════════════════
+// HABIT DEFINITIONS
+// ══════════════════════════════════════════════════
+const HABITS = [
+  {id:'fx_check',   label:'FX相場確認（GOLD/USD 5分足）',  sub:'20EMA・200EMA・直近高値安値',  tag:'fx',     days:'daily'},
+  {id:'fx_journal', label:'昨日のトレードを振り返る',         sub:'エントリー根拠・結果・改善点',   tag:'fx',     days:'daily'},
+  {id:'asset_chk',  label:'資産残高を確認',                  sub:'MoneyForward / 証券口座',      tag:'fire',   days:'daily'},
+  {id:'fx_s1',      label:'朝セッション（東京時間）',          sub:'9:00-11:00 チャート監視',      tag:'fx',     days:'weekday'},
+  {id:'fx_s2',      label:'夜セッション（ロンドン〜NY）',      sub:'21:00-23:00 ボラ高時間帯',     tag:'fx',     days:'weekday'},
+  {id:'nisa_chk',   label:'NISA積立状況確認',                sub:'楽天証券で今月の積立チェック',   tag:'invest', days:'monday'},
+  {id:'fx_review',  label:'友人との週次FXレビュー',           sub:'記録持参・改善点を共有',         tag:'review', days:'monday'},
+  {id:'fire_sim',   label:'FIREシミュレーター更新',           sub:'パラメータ見直し・到達年を確認', tag:'fire',   days:'monthly'},
+];
+
+function getTodayHabits() {
+  const d=new Date(), dow=d.getDay();
+  return HABITS.filter(h=>{
+    if(h.days==='daily')   return true;
+    if(h.days==='weekday') return dow>=1&&dow<=5;
+    if(h.days==='monday')  return dow===1;
+    if(h.days==='monthly') return d.getDate()===1;
+    return false;
+  });
+}
+
+function getHabitState() {
+  if (!localData.habits) localData.habits = {};
+  return localData.habits[today()] || {};
+}
+
+async function toggleHabit(id) {
+  if (!localData.habits) localData.habits = {};
+  if (!localData.habits[today()]) localData.habits[today()] = {};
+  const prev = localData.habits[today()][id];
+  localData.habits[today()][id] = !prev;
+  saveLocal();
+  buildHabits();
+  buildStreakCalendar();
+  showToast(!prev ? '✓ 完了' : '取り消しました');
+  // クラウドへ非同期で保存
+  syncToCloud('習慣記録', {
+    date: today(), habitId: id,
+    done: localData.habits[today()][id] ? 'TRUE' : 'FALSE',
+    saved: new Date().toISOString(),
+  });
+}
+
+function buildHabits() {
+  const habits = getTodayHabits();
+  const state  = getHabitState();
+  document.getElementById('habitList').innerHTML = habits.map(h=>{
+    const done = !!state[h.id];
+    return `<div class="habit-item${done?' done':''}" onclick="toggleHabit('${h.id}')" id="hi_${h.id}">
+      <div class="hchk"><span class="hchk-mark">✓</span></div>
+      <div class="hbody">
+        <div class="hlabel">${h.label}</div>
+        <div class="hsub">${h.sub}</div>
+      </div>
+      <div class="htag tag-${h.tag}">${h.tag.toUpperCase()}</div>
+    </div>`;
+  }).join('');
+  const done=habits.filter(h=>state[h.id]).length, total=habits.length;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('hpFill').style.width=pct+'%';
+  document.getElementById('hpPct').textContent=pct+'%';
+  document.getElementById('hpPct').style.color=pct===100?'var(--fire)':pct>=60?'var(--gold)':'var(--t2)';
+}
+
+// ══════════════════════════════════════════════════
+// FX CHECKLIST
+// ══════════════════════════════════════════════════
+const FXC = {
+  market:[
+    {id:'m1',text:'重要指標・イベント確認（本日の経済指標）',  note:'Investing.com カレンダーで確認'},
+    {id:'m2',text:'GOLD現在値・前日比を確認',                  note:'前日終値からの動きを把握'},
+    {id:'m3',text:'ドル円・米国債利回りの方向性を確認',        note:'GOLDと逆相関の資産'},
+    {id:'m4',text:'重要指標30分前はエントリー禁止を確認',      note:'指標30分前〜15分後は様子見'},
+  ],
+  tech:[
+    {id:'t1',text:'200EMA（長期トレンド）の方向を確認',        note:'200EMAより上=上昇トレンド'},
+    {id:'t2',text:'20EMA（短期トレンド）の傾きを確認',         note:'20EMAの傾きでトレンド強度判断'},
+    {id:'t3',text:'直近の高値・安値ラインを引く',              note:'サポート・レジスタンスを明確化'},
+    {id:'t4',text:'エントリー根拠を1行で言語化できる',         note:'「〇〇だから〇〇方向に入る」'},
+  ],
+  risk:[
+    {id:'r1',text:'今日の許容損失を確認（口座残高の2%以内）',  note:'1トレードの最大ロスを事前設定'},
+    {id:'r2',text:'損切りラインを先に決めている',              note:'エントリー前に必ず設定'},
+    {id:'r3',text:'今月の月間損益を確認（現時点）',            note:'月間目標30万への進捗'},
+    {id:'r4',text:'連続損失3回以上の場合は本日中止',           note:'3連敗したら休む'},
+  ],
+};
+
+function getFxcState() { return localData.fxc || {}; }
+
+function toggleFxc(id) {
+  if (!localData.fxc) localData.fxc = {};
+  localData.fxc[id] = !localData.fxc[id];
+  saveLocal();
+  buildFxChecklist();
+}
+
+function buildFxChecklist() {
+  const state = getFxcState();
+  const render = (items) => items.map(it=>{
+    const chk = !!state[it.id];
+    return `<div class="fxc-item${chk?' checked':''}" onclick="toggleFxc('${it.id}')">
+      <div class="fxc-box"><span>✓</span></div>
+      <div><div class="fxc-text">${it.text}</div><div class="fxc-note">${it.note}</div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('fxcMarket').innerHTML = render(FXC.market);
+  document.getElementById('fxcTech').innerHTML   = render(FXC.tech);
+  document.getElementById('fxcRisk').innerHTML   = render(FXC.risk);
+
+  const all=[...FXC.market,...FXC.tech,...FXC.risk];
+  const done=all.filter(i=>state[i.id]).length;
+  document.getElementById('fxcCount').textContent=`${done} / ${all.length} チェック完了`;
+  const btn=document.getElementById('fxcGoBtn');
+  const ready=document.getElementById('fxcReadyLabel');
+  if(done===all.length){
+    btn.classList.remove('disabled');
+    ready.textContent='✓ エントリー準備OK'; ready.style.color='var(--green)';
+  } else {
+    btn.classList.add('disabled');
+    ready.textContent=`残り ${all.length-done} 項目`; ready.style.color='var(--t3)';
+  }
+}
+
+function onFxGo() { showToast('🔥 チェック完了 — 良いトレードを！'); }
+
+// ══════════════════════════════════════════════════
+// MONTHLY DATA
+// ══════════════════════════════════════════════════
+async function saveMonthly() {
+  const fx    = parseInt(document.getElementById('miFx').value)||0;
+  const exp   = parseFloat(document.getElementById('miExp').value)||0;
+  const asset = parseInt(document.getElementById('miAsset').value)||0;
+  const wr    = parseFloat(document.getElementById('miWr').value)||0;
+  const mon   = thisMonth();
+
+  if (!localData.monthly) localData.monthly = {};
+  localData.monthly[mon] = {
+    month:mon, pnl:fx, expense:exp, asset, winRate:wr,
+    saved:new Date().toISOString()
+  };
+  saveLocal();
+
+  ['miFx','miExp','miAsset','miWr'].forEach(id=>document.getElementById(id).value='');
+
+  const st=document.getElementById('mfStatus');
+  st.textContent='保存中...';
+
+  // クラウドへ同期
+  await syncToCloud('FX月次', {
+    month:mon, pnl:fx, trades:'', winRate:wr, maxDD:'',
+    balance:asset*10000, memo:'', saved:new Date().toISOString()
+  });
+
+  st.textContent='✓ 保存 + クラウド同期完了';
+  setTimeout(()=>st.textContent='', 3000);
+
+  updateMonthlyAlert(fx);
+  buildFireStats(asset);
+  buildFxMiniLog();
+  buildAssetProgress(asset);
+  showToast('月次データをクラウドに保存しました');
+}
+
+function getLatestMonthly() {
+  const m=localData.monthly||{};
+  const keys=Object.keys(m).sort().reverse();
+  return keys.length ? m[keys[0]] : null;
+}
+
+function updateMonthlyAlert(fx) {
+  const box=document.getElementById('monthlyAlert');
+  const gap=TARGET_FX-fx;
+  if(fx>=TARGET_FX)
+    box.innerHTML=`<div class="alert-box ok"><div class="alert-icon">✓</div><div class="alert-text"><strong>月30万達成！</strong> FX収益 +${(fx/10000).toFixed(1)}万円。楽観シナリオ継続中。</div></div>`;
+  else if(fx>0)
+    box.innerHTML=`<div class="alert-box warn"><div class="alert-icon">！</div><div class="alert-text">今月 <strong>${(fx/10000).toFixed(1)}万円</strong>。目標まで <strong>あと${(gap/10000).toFixed(1)}万円</strong>。</div></div>`;
+  else if(fx<0)
+    box.innerHTML=`<div class="alert-box danger"><div class="alert-icon">⚠</div><div class="alert-text">今月は <strong>損失${Math.abs(fx/10000).toFixed(1)}万円</strong>。週次振り返りでルール確認を。</div></div>`;
+  else
+    box.innerHTML='';
+}
+
+// ══════════════════════════════════════════════════
+// FIRE STATS
+// ══════════════════════════════════════════════════
+function getFxStreak() {
+  const m=localData.monthly||{};
+  const keys=Object.keys(m).sort().reverse();
+  let s=0;
+  for(const k of keys){ if((m[k].pnl||0)>=TARGET_FX) s++; else break; }
+  return s;
+}
+
+function buildFireStats(overrideAsset) {
+  const latest=getLatestMonthly();
+  const asset=overrideAsset||(latest?.asset||ASSET_NOW);
+  const pct1=Math.min(asset/FIRE_TARGET1*100,100);
+  const gap1=Math.max(FIRE_TARGET1-asset,0);
+  const lastFx=latest?.pnl||0;
+  const streak=getFxStreak();
+  const monthSave=39+(lastFx/10000)-60;
+  const yrsLeft=monthSave>0?Math.round((gap1/100)/(monthSave*12/10000*1.04)):999;
+  const fireYear=Math.min(new Date().getFullYear()+yrsLeft,2055);
+
+  document.getElementById('fireStats').innerHTML=`
+    <div class="fstat">
+      <div class="fstat-label">現在資産（入力値）</div>
+      <div class="fstat-val" style="color:var(--gold)">${asset.toLocaleString()}<span style="font-size:11px;color:var(--t2)">万円</span></div>
+      <div class="fstat-track"><div class="fstat-fill" style="width:${pct1}%;background:linear-gradient(90deg,var(--gold),var(--fire))"></div></div>
+      <div class="fstat-note">楽観目標 ${pct1.toFixed(1)}%達成</div>
+    </div>
+    <div class="fstat">
+      <div class="fstat-label">楽観目標まで残り</div>
+      <div class="fstat-val" style="color:var(--teal)">${gap1.toLocaleString()}<span style="font-size:11px;color:var(--t2)">万円</span></div>
+      <div class="fstat-note">目標 12,000万円</div>
+    </div>
+    <div class="fstat">
+      <div class="fstat-label">FIRE予測年</div>
+      <div class="fstat-val" style="color:var(--fire2)">${fireYear}<span style="font-size:11px;color:var(--t2)">年</span></div>
+      <div class="fstat-note">${fireYear-2026+42}歳</div>
+    </div>
+    <div class="fstat">
+      <div class="fstat-label">今月FX収益</div>
+      <div class="fstat-val" style="color:${lastFx>=TARGET_FX?'var(--green)':lastFx>=0?'var(--gold)':'var(--red)'}">${lastFx>=0?'+':''}${(lastFx/10000).toFixed(1)}<span style="font-size:11px;color:var(--t2)">万円</span></div>
+      <div class="fstat-note">目標 月30万円</div>
+    </div>
+    <div class="fstat">
+      <div class="fstat-label">FX月30万 連続達成</div>
+      <div class="fstat-val" style="color:var(--fire)">${streak}<span style="font-size:11px;color:var(--t2)">ヶ月</span></div>
+      <div class="fstat-note">3ヶ月→楽観シナリオ確定</div>
+    </div>`;
+
+  const pill=document.getElementById('scenarioPill');
+  const eta=document.getElementById('etaChip');
+  if(streak>=3){ pill.textContent='SCENARIO: 楽観'; pill.className='scenario-pill pill-opt'; eta.textContent='楽観FIRE: '+fireYear+'年'; }
+  else if(streak>=1){ pill.textContent='SCENARIO: 標準'; pill.className='scenario-pill pill-std'; eta.textContent='標準FIRE: '+fireYear+'年'; }
+  else{ pill.textContent='SCENARIO: 保守'; pill.className='scenario-pill pill-con'; eta.textContent='保守FIRE: '+fireYear+'年'; }
+}
+
+function buildAssetProgress(overrideAsset) {
+  const asset=overrideAsset||(getLatestMonthly()?.asset||ASSET_NOW);
+  const pct=Math.min(asset/FIRE_TARGET1*100,100);
+  document.getElementById('mpFill').style.width=pct+'%';
+  document.getElementById('mpLeft').textContent=asset.toLocaleString()+'万';
+}
+
+// ══════════════════════════════════════════════════
+// STREAK CALENDAR
+// ══════════════════════════════════════════════════
+function buildStreakCalendar() {
+  const stored=localData.habits||{};
+  const grid=document.getElementById('streakGrid');
+  const now=new Date();
+  const days=[];
+  for(let i=89;i>=0;i--){ const d=new Date(now); d.setDate(now.getDate()-i); days.push(d.toISOString().slice(0,10)); }
+
+  let streak=0;
+  const dStr=days.map(d=>{
+    const dd=stored[d]||{};
+    const done=Object.values(dd).filter(Boolean).length;
+    const total=HABITS.filter(h=>h.days==='daily').length;
+    const pct=total?done/total:0;
+    const lv=pct===0?0:pct<.3?1:pct<.6?2:pct<1?3:4;
+    return {d,lv,done,total};
+  });
+  for(let i=dStr.length-1;i>=0;i--){ if(dStr[i].lv>=2) streak++; else break; }
+
+  grid.innerHTML=dStr.map(({d,lv,done,total})=>
+    `<div class="streak-day l${lv}" data-tip="${d}: ${done}/${total}完了"></div>`
+  ).join('');
+  document.getElementById('streakLabel').textContent=`連続 ${streak}日`;
+}
+
+// ══════════════════════════════════════════════════
+// WEEKLY REVIEW
+// ══════════════════════════════════════════════════
+let selRating=0;
+function buildRatingBtns() {
+  document.getElementById('ratingBtns').innerHTML=[1,2,3,4,5].map(n=>
+    `<button class="rbt${selRating===n?' sel':''}" onclick="setRating(${n})">${n}</button>`
+  ).join('');
+}
+function setRating(n){ selRating=n; buildRatingBtns(); }
+
+async function saveReview() {
+  const q1=document.getElementById('rq1').value.trim();
+  const q2=document.getElementById('rq2').value.trim();
+  if(!q1&&!q2){ showToast('内容を入力してください'); return; }
+  if(!localData.reviews) localData.reviews=[];
+  const entry={week:thisWeek(),q1,q2,rating:selRating,saved:new Date().toISOString()};
+  localData.reviews.unshift(entry);
+  localData.reviews=localData.reviews.slice(0,20);
+  saveLocal();
+  document.getElementById('rq1').value='';
+  document.getElementById('rq2').value='';
+  selRating=0; buildRatingBtns();
+  buildPastReviews();
+
+  // クラウドへ同期
+  await syncToCloud('週次振り返り', {
+    week:thisWeek(), q1, q2, rating:selRating, saved:new Date().toISOString()
+  });
+  showToast('振り返りをクラウドに保存しました');
+
+  const hs=getHabitState(); hs['fx_review']=true;
+  if(!localData.habits) localData.habits={};
+  localData.habits[today()]=hs; saveLocal(); buildHabits();
+}
+
+function buildPastReviews() {
+  const reviews=localData.reviews||[];
+  document.getElementById('pastReviews').innerHTML=reviews.slice(0,3).map(r=>
+    `<div class="pr-item">
+      <div class="pr-date">${r.week} 週 ${'★'.repeat(r.rating||0)}</div>
+      ${r.q1?`<div>${r.q1.slice(0,60)}${r.q1.length>60?'…':''}</div>`:''}
+    </div>`
+  ).join('');
+}
+
+// ══════════════════════════════════════════════════
+// DAILY LOG
+// ══════════════════════════════════════════════════
+function buildDailyLog() {
+  if(!localData.daily) localData.daily={};
+  const entries=localData.daily[today()]||[];
+  const el=document.getElementById('dleEntries');
+  if(!entries.length){ el.innerHTML='<div style="color:var(--t4);font-size:10px;padding:8px 0;">今日のメモはまだありません</div>'; return; }
+  const cols=['var(--gold)','var(--teal)','var(--fire)','var(--inv)','var(--green)'];
+  el.innerHTML=entries.map((e,i)=>`
+    <div class="dle-item" style="border-color:${cols[i%cols.length]}">
+      <div class="dle-time">${e.time}</div><div>${e.text}</div>
+    </div>`).join('');
+}
+
+function addDaily() {
+  const inp=document.getElementById('dailyInp');
+  const text=inp.value.trim();
+  if(!text) return;
+  if(!localData.daily) localData.daily={};
+  if(!localData.daily[today()]) localData.daily[today()]=[];
+  localData.daily[today()].push({text, time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})});
+  saveLocal(); inp.value=''; buildDailyLog();
+}
+
+// ══════════════════════════════════════════════════
+// FX MINI LOG
+// ══════════════════════════════════════════════════
+function buildFxMiniLog() {
+  const m=localData.monthly||{};
+  const entries=Object.entries(m).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,8);
+  const el=document.getElementById('fxMiniLog');
+  if(!entries.length) return;
+  el.innerHTML=entries.map(([mon,d])=>{
+    const fx=d.pnl||0;
+    const hit=fx>=TARGET_FX, near=fx>=200000&&fx<TARGET_FX;
+    const bc=hit?'fxml-ok':near?'fxml-near':'fxml-ng';
+    const bt=hit?'達成':near?'接近':'未達';
+    return `<div class="fxml-row">
+      <span class="fxml-month">${mon}</span>
+      <span class="fxml-pnl ${fx>=0?'pos':'neg'}">${fx>=0?'+':''}${(fx/10000).toFixed(1)}万円</span>
+      <span class="fxml-badge ${bc}">${bt}</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════
+// ROADMAP
+// ══════════════════════════════════════════════════
+function buildRoadmap() {
+  const items=[
+    {year:2026,age:42,label:'基盤確立',     tasks:['FX月30万達成','NISA年360万積立','第2子誕生'],         color:'var(--gold)',  current:true},
+    {year:2027,age:43,label:'加速フェーズ',  tasks:['管理職昇進','FX安定化（3ヶ月連続）','教育費積立開始'], color:'var(--t3)'},
+    {year:2029,age:45,label:'1億円達成',     tasks:['資産1億突破','家族世界旅行①'],                        color:'var(--t3)'},
+    {year:2031,age:47,label:'FIRE準備',       tasks:['資産1.2億','iDeCo受取戦略確定'],                       color:'var(--t3)'},
+    {year:2033,age:49,label:'🔥 FIRE達成',   tasks:['退職','FX専業移行','家族世界旅行②'],                   color:'var(--fire)', fire:true},
+  ];
+  document.getElementById('roadmapList').innerHTML=items.map((item,i)=>`
+    <div class="rm-item">
+      <div class="rm-year" style="color:${item.color}">${item.year}<br><span style="font-size:9px;color:var(--t3)">${item.age}歳</span></div>
+      <div class="rm-spine">
+        <div class="rm-dot" style="background:${item.color};${item.current||item.fire?'box-shadow:0 0 8px '+item.color:''}"></div>
+        ${i<items.length-1?'<div class="rm-line"></div>':''}
+      </div>
+      <div class="rm-body">
+        <div class="rm-label" style="color:${item.color}">${item.label}</div>
+        <div class="rm-tasks">${item.tasks.map(t=>`<div class="rm-task">・${t}</div>`).join('')}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════
+// TOPBAR & MISC
+// ══════════════════════════════════════════════════
+function buildTopbar() {
+  const now=new Date();
+  const h=now.getHours();
+  const g=h<10?'おはようございます':h<17?'お疲れ様です':'お疲れ様です';
+  document.getElementById('topDate').textContent=now.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  document.getElementById('topGreet').textContent=`${g}、とおるさん`;
+  document.getElementById('habitDateLabel').textContent=today();
+  document.getElementById('monthLabel').textContent=thisMonth();
+  document.getElementById('reviewWeekLabel').textContent=thisWeek()+'〜';
+  const diff=Math.ceil((FIRE_DATE-now)/(1000*60*60*24));
+  document.getElementById('fireCd').textContent=diff.toLocaleString();
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// ══════════════════════════════════════════════════
+// BUILD ALL & INIT
+// ══════════════════════════════════════════════════
+function buildAll() {
+  buildHabits();
+  buildFxChecklist();
+  buildRatingBtns();
+  buildPastReviews();
+  buildDailyLog();
+  buildStreakCalendar();
+  buildFxMiniLog();
+  buildFireStats();
+  buildAssetProgress();
+  buildRoadmap();
+}
+
+// Enter key for daily log
+document.getElementById('dailyInp').addEventListener('keydown', e=>{ if(e.key==='Enter') addDaily(); });
+
+// Init
+buildTopbar();
+buildAll();
+
+// URLが設定済みなら初回同期、なければセットアップモーダル表示
+if (gasUrl) {
+  setSyncStatus('syncing', '接続確認中...');
+  pingGas().then(ok=>{
+    if(ok){ setSyncStatus('ok','クラウド同期済み',new Date().toLocaleTimeString('ja-JP')); loadAllFromCloud(); }
+    else{ setSyncStatus('error','接続エラー — ローカルモードで動作中'); }
+  });
+} else {
+  // 初回アクセス時のみモーダル表示
+  if (!localStorage.getItem('fire_setup_seen')) {
+    localStorage.setItem('fire_setup_seen','1');
+    document.getElementById('setupModal').classList.remove('hidden');
+  } else {
+    setSyncStatus('local','ローカルモード（クラウド未設定）');
+  }
+}
+</script>
+</body>
+</html>
