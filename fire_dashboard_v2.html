@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIRE計画ダッシュボード v2 — 実データ版</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3e;
+    --accent: #c8a96e;
+    --accent2: #7b9ea8;
+    --danger: #c26b6b;
+    --success: #6bc2a0;
+    --warn: #c2a26b;
+    --text: #e8e4dc;
+    --text-dim: #8a8a9a;
+    --text-muted: #4a4a5e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+  }
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(200,169,110,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,169,110,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events:none; z-index:0;
+  }
+  .wrapper { position:relative; z-index:1; max-width:1200px; margin:0 auto; padding:48px 24px; }
+
+  /* Header */
+  .header { margin-bottom: 40px; }
+  .header-label { font-size:10px; letter-spacing:4px; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+  .header-title { font-family:'Cormorant Garamond',serif; font-size:48px; font-weight:300; font-style:italic; line-height:1; margin-bottom:6px; }
+  .header-title span { color:var(--accent); }
+  .header-sub { font-size:11px; color:var(--text-dim); letter-spacing:2px; }
+
+  .data-tag {
+    display:inline-block; margin-top:10px;
+    background:rgba(107,194,160,0.1); border:1px solid var(--success);
+    color:var(--success); font-size:9px; letter-spacing:2px; padding:3px 10px;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+    padding:14px 22px; background:var(--surface);
+    border:1px solid var(--border); border-left:3px solid var(--accent);
+    margin-bottom:36px;
+  }
+  .status-item { display:flex; flex-direction:column; gap:2px; }
+  .status-key { font-size:9px; letter-spacing:2px; color:var(--text-muted); text-transform:uppercase; }
+  .status-val { font-size:14px; color:var(--accent); font-weight:500; }
+  .status-divider { width:1px; height:28px; background:var(--border); }
+
+  /* Section */
+  .section { margin-bottom:36px; }
+  .section-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  .section-num { font-size:10px; color:var(--accent); letter-spacing:2px; opacity:0.7; }
+  .section-title { font-family:'Noto Serif JP',serif; font-size:13px; font-weight:400; letter-spacing:3px; }
+  .section-line { flex:1; height:1px; background:var(--border); }
+
+  /* Grid layouts */
+  .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .kpi-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .kpi-grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+
+  .kpi-card {
+    background:var(--surface); border:1px solid var(--border); padding:18px;
+    position:relative; overflow:hidden; transition:border-color 0.3s;
+  }
+  .kpi-card:hover { border-color:var(--accent); }
+  .kpi-card::after {
+    content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, var(--accent), transparent);
+    opacity:0; transition:opacity 0.3s;
+  }
+  .kpi-card:hover::after { opacity:1; }
+  .kpi-label { font-size:9px; letter-spacing:2px; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px; }
+  .kpi-value { font-size:26px; font-weight:300; line-height:1; margin-bottom:4px; }
+  .kpi-value .unit { font-size:12px; color:var(--text-dim); margin-left:2px; }
+  .kpi-note { font-size:10px; color:var(--text-dim); }
+  .kpi-sub { font-size:10px; color:var(--text-muted); margin-top:2px; }
+  .accent { color:var(--accent); }
+  .success { color:var(--success); }
+  .danger { color:var(--danger); }
+  .warn { color:var(--warn); }
+
+  /* Callout box */
+  .callout {
+    padding:16px 20px; border:1px solid var(--border); background:var(--surface);
+    border-left:3px solid var(--accent2); margin-bottom:14px;
+  }
+  .callout.warn-box { border-left-color:var(--warn); }
+  .callout.success-box { border-left-color:var(--success); }
+  .callout.danger-box { border-left-color:var(--danger); }
+  .callout-title { font-size:10px; letter-spacing:2px; color:var(--accent2); text-transform:uppercase; margin-bottom:6px; }
+  .callout.warn-box .callout-title { color:var(--warn); }
+  .callout.success-box .callout-title { color:var(--success); }
+  .callout.danger-box .callout-title { color:var(--danger); }
+  .callout-body { font-size:11px; color:var(--text-dim); line-height:1.8; }
+  .callout-body strong { color:var(--text); }
+
+  /* Progress */
+  .progress-block { background:var(--surface); border:1px solid var(--border); padding:24px; margin-bottom:14px; }
+  .progress-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+  .progress-title { font-family:'Noto Serif JP',serif; font-size:13px; letter-spacing:2px; }
+  .progress-pct { font-size:30px; color:var(--accent); font-weight:300; }
+  .progress-track { height:4px; background:var(--border); margin-bottom:8px; position:relative; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(90deg, var(--accent2), var(--accent)); transition:width 1.5s cubic-bezier(0.4,0,0.2,1); }
+  .progress-milestones { display:flex; justify-content:space-between; font-size:9px; color:var(--text-muted); letter-spacing:1px; }
+
+  /* Asset table */
+  .asset-table { width:100%; border-collapse:collapse; }
+  .asset-table th {
+    font-size:9px; letter-spacing:2px; color:var(--text-muted); text-transform:uppercase;
+    padding:8px 12px; border-bottom:1px solid var(--border); text-align:left;
+  }
+  .asset-table td { padding:10px 12px; border-bottom:1px solid rgba(42,42,62,0.5); font-size:12px; }
+  .asset-table tr:hover td { background:rgba(200,169,110,0.03); }
+  .asset-table .amount { text-align:right; color:var(--accent2); }
+  .asset-table .pct { text-align:right; color:var(--text-muted); font-size:10px; }
+  .asset-table .tag {
+    font-size:8px; padding:2px 6px; letter-spacing:1px;
+    border:1px solid; display:inline-block; text-transform:uppercase;
+  }
+  .tag-mamoru { color:var(--accent2); border-color:var(--accent2); }
+  .tag-fuyasu { color:var(--success); border-color:var(--success); }
+  .tag-kasegu { color:var(--accent); border-color:var(--accent); }
+
+  /* Timeline */
+  .timeline { display:flex; flex-direction:column; }
+  .timeline-item { display:grid; grid-template-columns:80px 24px 1fr; gap:0 14px; }
+  .timeline-year { font-size:11px; color:var(--accent); letter-spacing:1px; padding-top:14px; text-align:right; }
+  .timeline-spine { display:flex; flex-direction:column; align-items:center; }
+  .timeline-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); margin-top:18px; flex-shrink:0; z-index:1; }
+  .timeline-dot.big { width:12px; height:12px; box-shadow:0 0 12px var(--accent); margin-top:16px; }
+  .timeline-dot.fire { background:var(--success); box-shadow:0 0 16px var(--success); }
+  .timeline-line { flex:1; width:1px; background:var(--border); }
+  .timeline-item:last-child .timeline-line { display:none; }
+  .timeline-content { padding:10px 0 18px; border-bottom:1px solid var(--border); }
+  .timeline-item:last-child .timeline-content { border-bottom:none; }
+  .timeline-event { font-family:'Noto Serif JP',serif; font-size:13px; letter-spacing:1px; margin-bottom:5px; }
+  .timeline-detail { font-size:11px; color:var(--text-dim); line-height:1.8; }
+  .timeline-asset { font-size:17px; color:var(--accent2); margin-top:4px; }
+
+  /* Expense breakdown */
+  .expense-row { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid rgba(42,42,62,0.4); }
+  .expense-row:last-child { border-bottom:none; }
+  .expense-label { width:140px; font-size:11px; color:var(--text-dim); flex-shrink:0; }
+  .expense-bar-wrap { flex:1; height:6px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .expense-bar { height:100%; border-radius:2px; background:linear-gradient(90deg, var(--accent2), var(--accent)); }
+  .expense-amount { width:90px; text-align:right; font-size:11px; color:var(--text); flex-shrink:0; }
+
+  /* Risk grid */
+  .risk-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .risk-item { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--danger); padding:14px 18px; }
+  .risk-item.medium { border-left-color:var(--warn); }
+  .risk-item.low { border-left-color:var(--accent2); }
+  .risk-tag { font-size:8px; letter-spacing:2px; color:var(--danger); text-transform:uppercase; margin-bottom:5px; }
+  .risk-item.medium .risk-tag { color:var(--warn); }
+  .risk-item.low .risk-tag { color:var(--accent2); }
+  .risk-title { font-family:'Noto Serif JP',serif; font-size:12px; letter-spacing:1px; margin-bottom:5px; }
+  .risk-body { font-size:10px; color:var(--text-dim); line-height:1.7; }
+
+  /* Action items */
+  .action-list { display:flex; flex-direction:column; gap:10px; }
+  .action-item { display:grid; grid-template-columns:28px 1fr auto; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--border); padding:14px 18px; transition:border-color 0.2s; }
+  .action-item:hover { border-color:var(--accent); }
+  .action-num { font-size:18px; color:var(--text-muted); font-weight:300; }
+  .action-text { font-size:12px; letter-spacing:1px; }
+  .action-text span { display:block; font-size:10px; color:var(--text-dim); margin-top:3px; letter-spacing:0; }
+  .action-priority { font-size:8px; letter-spacing:2px; text-transform:uppercase; padding:3px 7px; border:1px solid; white-space:nowrap; }
+  .action-priority.high { color:var(--danger); border-color:var(--danger); }
+  .action-priority.mid { color:var(--warn); border-color:var(--warn); }
+  .action-priority.low { color:var(--accent2); border-color:var(--accent2); }
+
+  /* Two column */
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+  .footer { margin-top:48px; padding-top:20px; border-top:1px solid var(--border); display:flex; justify-content:space-between; }
+  .footer-note { font-size:10px; color:var(--text-muted); letter-spacing:1px; }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .kpi-card, .callout, .progress-block, .timeline-item, .risk-item, .action-item {
+    animation: fadeUp 0.5s ease both;
+  }
+
+  @media(max-width:768px) {
+    .kpi-grid, .kpi-grid-3 { grid-template-columns:1fr 1fr; }
+    .risk-grid, .two-col { grid-template-columns:1fr; }
+    .header-title { font-size:34px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header class="header">
+    <div class="header-label">Fat FIRE Personal Finance Plan — Real Data Edition</div>
+    <h1 class="header-title">Road to <span>FIRE</span></h1>
+    <div class="header-sub">TARGET — 50歳 / 2033年 / 残り約8年</div>
+    <div class="data-tag">ACTUAL DATA — MoneyForward 2025.01-12 + 月次資産報告</div>
+  </header>
+
+  <div class="status-bar">
+    <div class="status-item"><span class="status-key">現在年齢</span><span class="status-val">42歳</span></div>
+    <div class="status-divider"></div>
+    <div class="status-item"><span class="status-key">FIRE目標</span><span class="status-val">50歳 / 2033年</span></div>
+    <div class="status-divider"></div>
+    <div class="status-item"><span class="status-key">総資産（実値）</span><span class="status-val">約5,524万円</span></div>
+    <div class="status-divider"></div>
+    <div class="status-item"><span class="status-key">FIRE必要資産</span><span class="status-val">1.5〜1.8億円</span></div>
+    <div class="status-divider"></div>
+    <div class="status-item"><span class="status-key">達成率</span><span class="status-val">31〜37%</span></div>
+    <div class="status-divider"></div>
+    <div class="status-item"><span class="status-key">更新日</span><span class="status-val">2026.03</span></div>
+  </div>
+
+  <!-- 01 現状スナップショット -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">現状スナップショット — 2025年実データ</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="kpi-grid" style="margin-bottom:14px;">
+      <div class="kpi-card">
+        <div class="kpi-label">総資産（2025.12末）</div>
+        <div class="kpi-value accent">5,524<span class="unit">万円</span></div>
+        <div class="kpi-note">資産報告書より実値</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">2025年 手取り給与</div>
+        <div class="kpi-value">473<span class="unit">万円</span></div>
+        <div class="kpi-note">月平均 39.4万円</div>
+        <div class="kpi-sub">一時所得(ボーナス等): +203万円</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">通常月支出（実値）</div>
+        <div class="kpi-value warn">60<span class="unit">万円</span></div>
+        <div class="kpi-note">特殊支出除く月平均</div>
+        <div class="kpi-sub">出産・引越し特需除く</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">家賃（固定費）</div>
+        <div class="kpi-value">12.8<span class="unit">万円/月</span></div>
+        <div class="kpi-note">ローンなし・賃貸</div>
+        <div class="kpi-sub">年間153.6万円</div>
+      </div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">高配当株（日本）</div>
+        <div class="kpi-value accent">1,230<span class="unit">万円</span></div>
+        <div class="kpi-note">NTT 42,800株他 多銘柄</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">NISA / 投資信託</div>
+        <div class="kpi-value accent">1,368<span class="unit">万円</span></div>
+        <div class="kpi-note">NISA 1,167万 + 総合 193万</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">米国高配当ETF</div>
+        <div class="kpi-value accent">772<span class="unit">万円</span></div>
+        <div class="kpi-note">QYLD/SPYD/SCHD</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">確定拠出年金</div>
+        <div class="kpi-value">587<span class="unit">万円</span></div>
+        <div class="kpi-note">iDeCo相当分</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 資産内訳 -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">資産ポートフォリオ内訳</span>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <table class="asset-table">
+          <thead>
+            <tr>
+              <th>資産カテゴリ</th>
+              <th>タイプ</th>
+              <th class="amount">金額</th>
+              <th class="pct">比率</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>現金（日本円）</td><td><span class="tag tag-mamoru">守る</span></td><td class="amount">683万円</td><td class="pct">12.4%</td></tr>
+            <tr><td>米ドル現金</td><td><span class="tag tag-mamoru">守る</span></td><td class="amount">173万円</td><td class="pct">3.1%</td></tr>
+            <tr><td>確定拠出年金</td><td><span class="tag tag-fuyasu">増やす</span></td><td class="amount">587万円</td><td class="pct">10.6%</td></tr>
+            <tr><td>NISA（新・旧）</td><td><span class="tag tag-fuyasu">増やす</span></td><td class="amount">1,167万円</td><td class="pct">21.1%</td></tr>
+            <tr><td>投資信託（総合）</td><td><span class="tag tag-fuyasu">増やす</span></td><td class="amount">193万円</td><td class="pct">3.5%</td></tr>
+            <tr><td>BTC/仮想通貨</td><td><span class="tag tag-fuyasu">増やす</span></td><td class="amount">663万円</td><td class="pct">12.0%</td></tr>
+            <tr><td>高配当株（日本）</td><td><span class="tag tag-kasegu">稼ぐ</span></td><td class="amount">1,230万円</td><td class="pct">22.3%</td></tr>
+            <tr><td>米国高配当ETF</td><td><span class="tag tag-kasegu">稼ぐ</span></td><td class="amount">772万円</td><td class="pct">14.0%</td></tr>
+            <tr><td>STEPN等</td><td><span class="tag tag-fuyasu">増やす</span></td><td class="amount">54万円</td><td class="pct">1.0%</td></tr>
+            <tr style="border-top:1px solid var(--accent);">
+              <td><strong>合計</strong></td><td></td>
+              <td class="amount" style="color:var(--accent)"><strong>5,524万円</strong></td>
+              <td class="pct">100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="callout success-box" style="margin-bottom:12px;">
+          <div class="callout-title">FIREを加速する発見</div>
+          <div class="callout-body">
+            高配当株+米国ETFの合計が既に<strong>2,002万円</strong>。現在の配当利回り平均3〜4%として、年間<strong>60〜80万円</strong>の配当収入が発生中。月5〜7万円のパッシブ収入が既に稼働している。<br><br>
+            FX月30万安定後は「配当60〜80万 + FX360万 = 年420〜440万」という収入基盤が現実的。
+          </div>
+        </div>
+        <div class="callout warn-box">
+          <div class="callout-title">要注意: BTC依存リスク</div>
+          <div class="callout-body">
+            BTC/仮想通貨が資産の12%を占める。価格変動が激しく、FIRE計画の変数になりやすい。2025年末の水準（663万円）を<strong>過大評価せず</strong>、FIRE計算からは保守的に除外か半額で試算することを推奨。
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 FIRE必要資産の計算 -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">FIRE必要資産 — 実データ試算</span>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="kpi-grid-3" style="margin-bottom:14px;">
+      <div class="kpi-card">
+        <div class="kpi-label">FIRE後 月支出想定</div>
+        <div class="kpi-value">55<span class="unit">万円</span></div>
+        <div class="kpi-note">現在60万 → 子供費用増、家賃変動で調整</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">FIRE後 収入（配当+FX）</div>
+        <div class="kpi-value success">-35<span class="unit">万円</span></div>
+        <div class="kpi-note">配当8万 + FX30万 - 税等3万</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">純支出（運用でカバー）</div>
+        <div class="kpi-value accent">20<span class="unit">万円/月</span></div>
+        <div class="kpi-note">年240万円 ÷ 4% = 必要元本6,000万</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="callout success-box">
+        <div class="callout-title">楽観シナリオ（FX月30万安定）</div>
+        <div class="callout-body">
+          純支出: 月20万円 → <strong>年240万 ÷ 4% = 6,000万円</strong><br>
+          子供教育費バッファ 3,000万 + 予備費 1,000万を加算<br>
+          <strong>必要資産: 約1.0〜1.2億円</strong><br>
+          現在5,524万から4,476〜6,476万増加が必要。<br>
+          → 年利5%複利 + 毎年700万積立で<strong>2031年(49歳)達成可能</strong>
+        </div>
+      </div>
+      <div class="callout warn-box">
+        <div class="callout-title">保守シナリオ（FX不安定・収入なし）</div>
+        <div class="callout-body">
+          純支出: 月55万円全額 → <strong>年660万 ÷ 4% = 1.65億円</strong><br>
+          子供教育費バッファ 3,000万追加<br>
+          <strong>必要資産: 約1.8〜2.0億円</strong><br>
+          → 8年での達成は厳しく<strong>53〜55歳</strong>が現実的ターゲット
+        </div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:14px;">
+      <div class="callout-title">推奨ターゲット</div>
+      <div class="callout-body">
+        FX収益の安定化が最重要変数。<strong>月30万安定</strong>を達成すれば1.2億で50歳FIRE可能。<strong>月15万程度</strong>でも準FIRE（副業FXで月収維持）として54歳に達成可能。計画は「FX月30万達成率」に連動させてフェキシブルに見直す。
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 進捗 -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">FIRE達成進捗</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="progress-block">
+      <div class="progress-header">
+        <div>
+          <div class="progress-title">資産積み上げ進捗（楽観目標1.2億）</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">5,524万 → 1億2,000万</div>
+        </div>
+        <div class="progress-pct" id="pct1">46%</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="bar1" style="width:0%"></div>
+      </div>
+      <div class="progress-milestones">
+        <span>現在 5,524万</span>
+        <span>中間 8,000万(2029)</span>
+        <span>目標 1.2億(2031)</span>
+      </div>
+    </div>
+    <div class="progress-block">
+      <div class="progress-header">
+        <div>
+          <div class="progress-title">資産積み上げ進捗（保守目標1.8億）</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">5,524万 → 1億8,000万</div>
+        </div>
+        <div class="progress-pct" id="pct2" style="color:var(--warn)">31%</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="bar2" style="width:0%;background:linear-gradient(90deg,var(--warn),var(--accent))"></div>
+      </div>
+      <div class="progress-milestones">
+        <span>現在 5,524万</span>
+        <span>中間 1.1億(2030)</span>
+        <span>目標 1.8億(2035)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 支出内訳 -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <span class="section-title">2025年 支出実態分析</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="two-col">
+      <div style="background:var(--surface);border:1px solid var(--border);padding:20px;">
+        <div style="font-size:10px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin-bottom:16px;">月別支出カテゴリ（年間平均）</div>
+
+        <div class="expense-row">
+          <div class="expense-label">住宅（家賃）</div>
+          <div class="expense-bar-wrap"><div class="expense-bar" style="width:100%;background:var(--accent2)"></div></div>
+          <div class="expense-amount">128,010円</div>
+        </div>
+        <div class="expense-row">
+          <div class="expense-label">日用品・育児</div>
+          <div class="expense-bar-wrap"><div class="expense-bar" style="width:78%"></div></div>
+          <div class="expense-amount">99,742円</div>
+        </div>
+        <div class="expense-row">
+          <div class="expense-label">食費</div>
+          <div class="expense-bar-wrap"><div class="expense-bar" style="width:65%"></div></div>
+          <div class="expense-amount">83,791円</div>
+        </div>
+        <div class="expense-row">
+          <div class="expense-label">趣味・娯楽</div>
+          <div class="expense-bar-wrap"><div class="expense-bar" style="width:56%"></div></div>
+          <div class="expense-amount">71,946円</div>
+        </div>
+        <div class="expense-row">
+          <div class="expense-label">交際費</div>
+          <div class="expense-bar-wrap"><div class="expense-bar" style="width:36%"></div></div>
+          <div class="expense-amount">45,979円</div>
+        </div>
+        <div class="expense-row">
+          <div class="expense-label">衣服・美容</div>
+          <div class="expense-bar-wrap"><div class="expense-bar" style="width:27%"></div></div>
+          <div class="expense-amount">34,067円</div>
+        </div>
+        <div class="expense-row">
+          <div class="expense-label">通信費</div>
+          <div class="expense-bar-wrap"><div class="expense-bar" style="width:20%"></div></div>
+          <div class="expense-amount">25,462円</div>
+        </div>
+        <div class="expense-row">
+          <div class="expense-label">水道・光熱費</div>
+          <div class="expense-bar-wrap"><div class="expense-bar" style="width:18%"></div></div>
+          <div class="expense-amount">23,445円</div>
+        </div>
+        <div class="expense-row">
+          <div class="expense-label">教養・教育</div>
+          <div class="expense-bar-wrap"><div class="expense-bar" style="width:19%"></div></div>
+          <div class="expense-amount">24,618円</div>
+        </div>
+      </div>
+      <div>
+        <div class="callout warn-box" style="margin-bottom:12px;">
+          <div class="callout-title">2025年は特殊支出年だった</div>
+          <div class="callout-body">
+            年間支出920万の内訳:<br>
+            ・医療費（出産関連）: <strong>105万円</strong><br>
+            ・家具・家電（育児用品等）: <strong>76万円</strong><br>
+            ・その他特別: <strong>19万円</strong><br>
+            計<strong>200万円</strong>が一過性の特殊支出。<br>
+            2026年以降の通常支出は月55〜60万円が妥当な見積り。
+          </div>
+        </div>
+        <div class="callout">
+          <div class="callout-title">FIRE後の支出変動要因</div>
+          <div class="callout-body">
+            <strong>増える費用:</strong> 子供2人の教育費（ピーク15〜20万/月）、国保+国民年金（月5〜7万）<br><br>
+            <strong>減る費用:</strong> 通勤交通費、会社員向け交際費、外食ランチ代<br><br>
+            差し引きでFIRE後支出は<strong>月60〜70万円</strong>が現実的。子供が独立後は50万以下に収まる見込み。
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 ロードマップ -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <span class="section-title">8年ロードマップ</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-year">2026<br><span style="font-size:9px;color:var(--text-muted)">42歳</span></div>
+        <div class="timeline-spine"><div class="timeline-dot big"></div><div class="timeline-line"></div></div>
+        <div class="timeline-content">
+          <div class="timeline-event">基盤確立フェーズ — 第2子誕生</div>
+          <div class="timeline-detail">
+            第2子誕生（予定）/ FX月30万安定化に集中<br>
+            NISA満額投資（年間360万）継続 / 高配当株ポートフォリオ育成<br>
+            育休手当受給期間 → 支出増を織り込み、投資ペースを守る<br>
+            奨学金返済（月1.6万）継続 → 完済は2036年3月
+          </div>
+          <div class="timeline-asset">▶ 資産目標 6,200〜6,500万</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">2027-28<br><span style="font-size:9px;color:var(--text-muted)">43-44歳</span></div>
+        <div class="timeline-spine"><div class="timeline-dot"></div><div class="timeline-line"></div></div>
+        <div class="timeline-content">
+          <div class="timeline-event">加速フェーズ — 管理職昇進</div>
+          <div class="timeline-detail">
+            管理職昇進による年収アップ期待（+100〜200万）/ Hibikiプロジェクト収益化<br>
+            FX副収入を月30万で安定稼動 → 家計の余剰を投資に<br>
+            子供2人が保育園・幼稚園フェーズ → 保育費ピーク年（月5〜8万）
+          </div>
+          <div class="timeline-asset">▶ 資産目標 7,500〜8,500万</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">2029-30<br><span style="font-size:9px;color:var(--text-muted)">45-46歳</span></div>
+        <div class="timeline-spine"><div class="timeline-dot big"></div><div class="timeline-line"></div></div>
+        <div class="timeline-content">
+          <div class="timeline-event">中間チェックポイント — 1億円</div>
+          <div class="timeline-detail">
+            資産1億達成を確認 → FIRE前倒し検討 / 家族世界旅行（第1回）<br>
+            子供5歳・4歳頃 → 教育費本格化の前に余裕資金で旅行<br>
+            FXが月50万超なら楽観シナリオへシフト → FIRE前倒しを検討
+          </div>
+          <div class="timeline-asset">▶ 資産目標 9,000万〜1.1億</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">2031-32<br><span style="font-size:9px;color:var(--text-muted)">47-48歳</span></div>
+        <div class="timeline-spine"><div class="timeline-dot"></div><div class="timeline-line"></div></div>
+        <div class="timeline-content">
+          <div class="timeline-event">FIRE準備フェーズ</div>
+          <div class="timeline-detail">
+            資産1.2億 達成予測 → 楽観FIRE判断時期<br>
+            iDeCo受取戦略の確定 / 社会保険自己負担の精緻試算<br>
+            FX専業への移行準備 / 配当ポートフォリオの最終調整
+          </div>
+          <div class="timeline-asset">▶ 資産目標 1.2〜1.5億</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">2033<br><span style="font-size:9px;color:var(--text-muted)">50歳★</span></div>
+        <div class="timeline-spine"><div class="timeline-dot big fire"></div><div class="timeline-line"></div></div>
+        <div class="timeline-content">
+          <div class="timeline-event">FIRE 達成 — 最短ターゲット</div>
+          <div class="timeline-detail">
+            楽観シナリオ達成時: 資産1.2〜1.5億で退職<br>
+            FX専業 + 配当月8万 + 資産取り崩し で生活費をカバー<br>
+            子供7歳・6歳 → 小学校在籍中。教育費は計画内で管理
+          </div>
+          <div class="timeline-asset" style="color:var(--success)">▶ 目標資産 1.2〜1.8億 / 月収入 35万+(配当+FX)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 リスク -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <span class="section-title">リスク分析 — 実データに基づく</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="risk-grid">
+      <div class="risk-item">
+        <div class="risk-tag">HIGH RISK</div>
+        <div class="risk-title">FX収益の不安定性</div>
+        <div class="risk-body">FIRE計画の最重要変数。2025年時点でFX残高はほぼゼロ（225円）で実質ゼロスタート。月30万を安定して出せるまで、FIRE計画は常に保守シナリオで動く。月次トラッキングが必須。</div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-tag">HIGH RISK</div>
+        <div class="risk-title">子供2人の教育費膨張</div>
+        <div class="risk-body">2人とも私立ルートなら幼〜大で2人合計8,000万超も。公立ルートでも4,000〜5,000万。今年中に教育方針の方向性を決め、積立計画を確定させる必要がある。</div>
+      </div>
+      <div class="risk-item medium">
+        <div class="risk-tag">MEDIUM RISK</div>
+        <div class="risk-title">BTC下落リスク</div>
+        <div class="risk-body">保有663万円が資産の12%。過去のサイクルでは70〜80%下落が発生。FIRE計算にはBTCを過大計上しないよう、保守試算では半値の330万でカウント推奨。</div>
+      </div>
+      <div class="risk-item medium">
+        <div class="risk-tag">MEDIUM RISK</div>
+        <div class="risk-title">インフレ・円安加速</div>
+        <div class="risk-body">2025年の月支出実態60万が10年後には実質的に75〜80万水準になる可能性。外貨資産（米ドル・ETF）比率が既にある程度あるのはヘッジとして有効。継続強化推奨。</div>
+      </div>
+      <div class="risk-item low">
+        <div class="risk-tag">LOW RISK</div>
+        <div class="risk-title">奨学金返済</div>
+        <div class="risk-body">残高約1,023万円（無利子・有利子混在）、完済予定2036年3月。月1.6万円の支払いは月次キャッシュフローに既に織り込み済みで計画への影響は小さい。</div>
+      </div>
+      <div class="risk-item low">
+        <div class="risk-tag">LOW RISK</div>
+        <div class="risk-title">社会保険料急増</div>
+        <div class="risk-body">50歳FIRE後は国民健康保険に切替。所得減少に伴い保険料も下がるが、試算では年200万以下を想定。配当所得の申告方法（申告分離課税）最適化で圧縮可能。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 今すぐやること -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <span class="section-title">今すぐやること — 優先アクション</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="action-list">
+      <div class="action-item">
+        <div class="action-num">01</div>
+        <div class="action-text">FX月次成績トラッカーを作る（今月開始）<span>DMMでのGOLD/USDトレードの月次損益を記録。「月30万達成 or 未達」を毎月可視化。3ヶ月連続達成でFIRE計画を楽観シナリオへシフト。</span></div>
+        <div class="action-priority high">今月中</div>
+      </div>
+      <div class="action-item">
+        <div class="action-num">02</div>
+        <div class="action-text">子供2人の教育費シミュレーション確定<span>公立ルート vs 私立ルート別の総費用試算（幼〜大学）。1人あたりの月次積立額を決定。学資保険または学資用NISAへの配分を今年中に開始。</span></div>
+        <div class="action-priority high">3ヶ月以内</div>
+      </div>
+      <div class="action-item">
+        <div class="action-num">03</div>
+        <div class="action-text">NISA満額投資（年360万）の配分見直し<span>現状の楽天SP500 + 楽天SCHD構成を維持しつつ、成長投資枠240万分の活用方法を確認。高配当ETFへの追加投資で配当収入の底上げを検討。</span></div>
+        <div class="action-priority high">今月中</div>
+      </div>
+      <div class="action-item">
+        <div class="action-num">04</div>
+        <div class="action-text">奨学金の繰り上げ返済を検討<span>残高1,023万で有利子部分の金利0.004%。低金利なので急ぐ必要はないが、FIRE後の支払い義務（月1.6万）はキャッシュフローを圧迫する。FIRE直前に一括返済するシナリオも検討。</span></div>
+        <div class="action-priority mid">今年中</div>
+      </div>
+      <div class="action-item">
+        <div class="action-num">05</div>
+        <div class="action-text">BTCの取り崩し戦略を決める<span>663万円のBTCをいつ・どのように現金化するか。FIRE計画では「次の高騰サイクル（2025-26年）で一部利確 → NISA/高配当株に移す」戦略が有効。</span></div>
+        <div class="action-priority mid">今年中</div>
+      </div>
+      <div class="action-item">
+        <div class="action-num">06</div>
+        <div class="action-text">このダッシュボードを四半期ごとに更新<span>MoneyForwardのデータ + 資産報告書を3ヶ月ごとにアップロードして再計算。FX達成率 / 資産増加ペース / 計画乖離を数値で確認し、必要なら計画修正。</span></div>
+        <div class="action-priority low">四半期ごと</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-note">// 実データ: MoneyForward 2025.01-12 (3,026件) + 月次資産報告書 2025.12末 / 計画は四半期ごとに更新</div>
+    <div style="font-size:10px;color:var(--text-muted);">v2.0 — 2026.03</div>
+  </footer>
+
+</div>
+<script>
+  setTimeout(() => {
+    document.getElementById('bar1').style.width = '46%';
+    document.getElementById('bar2').style.width = '31%';
+  }, 500);
+</script>
+</body>
+</html>

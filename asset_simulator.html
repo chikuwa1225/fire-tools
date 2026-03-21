@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>資産推移シミュレーター — FIRE計画</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Noto+Serif+JP:wght@300;400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#070b0e; --p1:#0e1520; --p2:#131d2a; --p3:#182030;
+  --br:#1c2d3c; --br2:#243648;
+  --opt:#c8a84a; --opt2:#e8c870; --opt-bg:rgba(200,168,74,0.08);
+  --std:#4ab8c8; --std2:#70d8e8; --std-bg:rgba(74,184,200,0.08);
+  --con:#c84870; --con2:#e87898; --con-bg:rgba(200,72,112,0.08);
+  --fire1:#4ac880; --fire2:#70e8a0;
+  --fire2c:#a8d848; --fire2c2:#c8f068;
+  --inv:#a870d8; --inv2:#c898f0;
+  --fx:#d8a840; --fx2:#f0c860;
+  --cash:#6898c8; --cash2:#88b8e8;
+  --btc:#f0803a; --btc2:#f8a060;
+  --text:#d8eaf8; --t2:#7a9ab8; --t3:#3a5a78; --t4:#1a3050;
+  --glow-opt:rgba(200,168,74,0.15);
+  --danger:#c84040; --warn:#c88030; --ok:#40b870;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'DM Mono',monospace; min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(200,168,74,0.05) 0%, transparent 55%);
+}
+.app{max-width:1400px;margin:0 auto;padding:36px 20px 80px;}
+
+/* ── HEADER ── */
+.hdr{margin-bottom:36px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px;}
+.hdr-left{}
+.hdr-eye{font-size:9px;letter-spacing:5px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;}
+.hdr-title{font-family:'Archivo Black',sans-serif;font-size:48px;letter-spacing:-1px;line-height:0.95;
+  background:linear-gradient(135deg,var(--opt2),var(--opt),#906820);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hdr-sub{font-size:11px;color:var(--t2);letter-spacing:2px;margin-top:8px;}
+.hdr-right{display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+.fire-eta{text-align:right;}
+.fire-eta-label{font-size:9px;letter-spacing:3px;color:var(--t3);text-transform:uppercase;margin-bottom:4px;}
+.fire-eta-val{font-family:'Archivo Black',sans-serif;font-size:32px;color:var(--fire1);}
+.fire-eta-sub{font-size:10px;color:var(--t2);}
+.scenario-badges{display:flex;gap:8px;}
+.sc-badge{padding:4px 12px;border:1px solid;font-size:9px;letter-spacing:2px;text-transform:uppercase;}
+.sc-badge.opt{border-color:var(--opt);color:var(--opt);}
+.sc-badge.std{border-color:var(--std);color:var(--std);}
+.sc-badge.con{border-color:var(--con);color:var(--con);}
+
+/* ── KPI ROW ── */
+.kpi-row{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--br);
+  border:1px solid var(--br);margin-bottom:24px;}
+.kpi{background:var(--p1);padding:14px 16px;}
+.kpi-label{font-size:8px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:6px;}
+.kpi-val{font-size:20px;font-weight:300;line-height:1;}
+.kpi-val .u{font-size:10px;color:var(--t2);margin-left:2px;}
+.kpi-note{font-size:9px;color:var(--t2);margin-top:3px;}
+
+/* ── FIRE PROGRESS ── */
+.fire-progress-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+.fp-card{background:var(--p1);border:1px solid var(--br);padding:16px 20px;}
+.fp-label{font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:6px;}
+.fp-track{height:6px;background:var(--br2);margin:8px 0 6px;overflow:hidden;}
+.fp-fill{height:100%;transition:width 1s cubic-bezier(.4,0,.2,1);}
+.fp-meta{display:flex;justify-content:space-between;font-size:9px;color:var(--t2);}
+
+/* ── MAIN LAYOUT ── */
+.main{display:grid;grid-template-columns:320px 1fr;gap:20px;margin-bottom:24px;}
+
+/* ── CONTROLS PANEL ── */
+.ctrl-panel{display:flex;flex-direction:column;gap:14px;}
+.ctrl-section{background:var(--p1);border:1px solid var(--br);padding:18px;}
+.ctrl-section-title{font-family:'Noto Serif JP',serif;font-size:12px;letter-spacing:2px;
+  margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--br);
+  display:flex;align-items:center;gap:8px;}
+.ctdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.ctrl-rows{display:flex;flex-direction:column;gap:10px;}
+.ctrl-row{display:flex;flex-direction:column;gap:4px;}
+.ctrl-label{font-size:9px;letter-spacing:1px;color:var(--t2);display:flex;justify-content:space-between;}
+.ctrl-label .val{color:var(--text);font-size:10px;}
+.slider-wrap{position:relative;}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:4px;
+  background:var(--br2);outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--opt);border:2px solid var(--bg);cursor:pointer;
+  transition:transform .15s;
+}
+input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.2);}
+input[type=range]::-webkit-slider-runnable-track{
+  height:4px;background:linear-gradient(90deg,var(--opt) var(--pct,50%),var(--br2) var(--pct,50%));
+  border-radius:2px;
+}
+.ctrl-inp{
+  background:var(--p2);border:1px solid var(--br2);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:11px;padding:5px 8px;
+  width:100%;outline:none;transition:border-color .2s;
+}
+.ctrl-inp:focus{border-color:var(--opt);}
+.ctrl-row-2{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+
+/* ── CHART PANEL ── */
+.chart-panel{display:flex;flex-direction:column;gap:16px;}
+.chart-box{background:var(--p1);border:1px solid var(--br);padding:20px;}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.chart-title{font-family:'Noto Serif JP',serif;font-size:13px;letter-spacing:2px;}
+.chart-btns{display:flex;gap:4px;}
+.cbtn{
+  padding:4px 10px;font-size:9px;letter-spacing:1px;background:transparent;
+  border:1px solid var(--br2);color:var(--t3);cursor:pointer;text-transform:uppercase;
+  transition:all .15s;font-family:'DM Mono',monospace;
+}
+.cbtn.active{border-color:var(--opt);color:var(--opt);background:var(--opt-bg);}
+.cbtn:hover{color:var(--text);}
+.chart-area{position:relative;height:340px;}
+
+/* ── SCENARIO LEGEND ── */
+.sc-legend{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;}
+.sc-leg-item{display:flex;align-items:center;gap:7px;font-size:10px;}
+.sc-dot{width:10px;height:3px;border-radius:1px;flex-shrink:0;}
+
+/* ── SCENARIO RESULT CARDS ── */
+.sc-results{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+.sc-card{border:1px solid;padding:18px;position:relative;overflow:hidden;}
+.sc-card.opt{border-color:rgba(200,168,74,0.4);background:var(--opt-bg);}
+.sc-card.std{border-color:rgba(74,184,200,0.4);background:var(--std-bg);}
+.sc-card.con{border-color:rgba(200,72,112,0.3);background:var(--con-bg);}
+.sc-card-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;}
+.sc-card.opt .sc-card-label{color:var(--opt);}
+.sc-card.std .sc-card-label{color:var(--std);}
+.sc-card.con .sc-card-label{color:var(--con);}
+.sc-card-name{font-family:'Noto Serif JP',serif;font-size:14px;letter-spacing:1px;margin-bottom:12px;}
+.sc-rows{display:flex;flex-direction:column;gap:6px;}
+.sc-row{display:flex;justify-content:space-between;align-items:baseline;
+  padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.sc-row:last-child{border-bottom:none;}
+.sc-key{font-size:10px;color:var(--t2);}
+.sc-val{font-size:13px;}
+.sc-card.opt .sc-val{color:var(--opt);}
+.sc-card.std .sc-val{color:var(--std);}
+.sc-card.con .sc-val{color:var(--con);}
+.sc-val.big{font-size:20px;font-weight:300;}
+.sc-fire-badge{
+  margin-top:10px;padding:4px 10px;font-size:9px;letter-spacing:2px;
+  text-align:center;border:1px solid;text-transform:uppercase;
+}
+.sc-card.opt .sc-fire-badge{border-color:var(--fire1);color:var(--fire1);}
+.sc-card.std .sc-fire-badge{border-color:var(--fire2c);color:var(--fire2c);}
+.sc-card.con .sc-fire-badge{border-color:var(--con2);color:var(--con2);}
+
+/* ── ASSET BREAKDOWN ── */
+.breakdown-row{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px;}
+.breakdown-panel{background:var(--p1);border:1px solid var(--br);padding:18px;}
+.bp-title{font-family:'Noto Serif JP',serif;font-size:12px;letter-spacing:2px;
+  margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--br);}
+.asset-bars{display:flex;flex-direction:column;gap:8px;}
+.asset-bar-row{display:flex;align-items:center;gap:10px;}
+.abar-label{width:120px;font-size:10px;color:var(--t2);flex-shrink:0;}
+.abar-wrap{flex:1;height:8px;background:var(--br2);border-radius:2px;overflow:hidden;}
+.abar-fill{height:100%;border-radius:2px;transition:width .8s cubic-bezier(.4,0,.2,1);}
+.abar-val{width:70px;text-align:right;font-size:10px;color:var(--text);flex-shrink:0;}
+.abar-pct{width:36px;text-align:right;font-size:9px;color:var(--t3);flex-shrink:0;}
+
+/* ── YEAR TABLE ── */
+.year-table-wrap{background:var(--p1);border:1px solid var(--br);overflow-x:auto;margin-bottom:24px;}
+.year-table-header{padding:16px 20px 12px;border-bottom:1px solid var(--br);}
+.year-table{width:100%;border-collapse:collapse;font-size:10px;}
+.year-table th{padding:8px 14px;background:var(--p2);border-bottom:1px solid var(--br);
+  font-size:8px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;
+  white-space:nowrap;}
+.year-table td{padding:8px 14px;border-bottom:1px solid rgba(28,45,60,0.6);white-space:nowrap;}
+.year-table tr:hover td{background:rgba(255,255,255,0.015);}
+.year-table .fire-row td{background:rgba(74,200,128,0.04);}
+.year-table .fire-row td:first-child{color:var(--fire1);font-weight:500;}
+.year-table .fire-hit td{background:rgba(74,200,128,0.12);}
+.year-table .fire-hit td:first-child{color:var(--fire1);}
+.year-table .total-row td{font-weight:500;background:var(--p2);}
+.fire-mark{font-size:9px;color:var(--fire1);margin-left:4px;}
+
+/* ── ANNOTATION ── */
+.annotation{
+  border:1px solid var(--br2);padding:14px 18px;
+  background:var(--p2);margin-bottom:24px;
+  display:flex;gap:14px;align-items:flex-start;
+}
+.ann-icon{font-size:18px;flex-shrink:0;margin-top:2px;}
+.ann-title{font-family:'Noto Serif JP',serif;font-size:12px;margin-bottom:4px;}
+.ann-body{font-size:11px;color:var(--t2);line-height:1.8;}
+.ann-body strong{color:var(--text);}
+
+/* ── RESET BTN ── */
+.reset-btn{
+  background:transparent;border:1px solid var(--br2);color:var(--t3);
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+  padding:5px 14px;cursor:pointer;text-transform:uppercase;transition:all .2s;
+}
+.reset-btn:hover{border-color:var(--opt);color:var(--opt);}
+
+/* ── ANIM ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.kpi,.sc-card,.breakdown-panel,.chart-box,.annotation{animation:fadeUp .5s ease both;}
+
+@media(max-width:1100px){.main{grid-template-columns:1fr;}}
+@media(max-width:760px){
+  .kpi-row{grid-template-columns:1fr 1fr 1fr;}
+  .sc-results{grid-template-columns:1fr;}
+  .breakdown-row{grid-template-columns:1fr;}
+  .fire-progress-row{grid-template-columns:1fr;}
+  .hdr-title{font-size:36px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ── HEADER ── -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-eye">Asset Growth Simulator</div>
+    <div class="hdr-title">資産推移<br>シミュレーター</div>
+    <div class="hdr-sub">現在資産 5,524万円 → FIRE目標 / 3シナリオ同時表示 / パラメータ可変</div>
+  </div>
+  <div class="hdr-right">
+    <div class="fire-eta">
+      <div class="fire-eta-label">標準シナリオ FIRE到達</div>
+      <div class="fire-eta-val" id="etaYear">―</div>
+      <div class="fire-eta-sub" id="etaAge">計算中...</div>
+    </div>
+    <div class="scenario-badges">
+      <div class="sc-badge opt">楽観</div>
+      <div class="sc-badge std">標準</div>
+      <div class="sc-badge con">保守</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── KPI ROW ── */
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="kpi-label">現在資産（実値）</div>
+    <div class="kpi-val" style="color:var(--opt)">5,524<span class="u">万</span></div>
+    <div class="kpi-note">2025.12末 実績</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">FIRE目標（楽観）</div>
+    <div class="kpi-val" style="color:var(--fire1)" id="kFire1">1.2<span class="u">億</span></div>
+    <div class="kpi-note">FX月30万安定</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">FIRE目標（保守）</div>
+    <div class="kpi-val" style="color:var(--fire2c)" id="kFire2">1.8<span class="u">億</span></div>
+    <div class="kpi-note">FX収入なし想定</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">不足額（楽観）</div>
+    <div class="kpi-val" style="color:var(--std)" id="kGap1">―<span class="u">万</span></div>
+    <div class="kpi-note" id="kGap1Note">―</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">不足額（保守）</div>
+    <div class="kpi-val" style="color:var(--con)" id="kGap2">―<span class="u">万</span></div>
+    <div class="kpi-note" id="kGap2Note">―</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">月間純貯蓄（推定）</div>
+    <div class="kpi-val" style="color:var(--opt)" id="kSave">―<span class="u">万</span></div>
+    <div class="kpi-note" id="kSaveNote">収入−支出</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">FX年間目標</div>
+    <div class="kpi-val" style="color:var(--fx)">360<span class="u">万</span></div>
+    <div class="kpi-note">月30万 × 12</div>
+  </div>
+</div>
+
+<!-- ── FIRE PROGRESS ── -->
+<div class="fire-progress-row">
+  <div class="fp-card">
+    <div class="fp-label">楽観目標（1.2億）達成進捗</div>
+    <div style="font-size:22px;color:var(--fire1)" id="fp1Pct">―%</div>
+    <div class="fp-track"><div class="fp-fill" id="fp1Bar" style="width:0%;background:linear-gradient(90deg,var(--fire1),var(--fire2))"></div></div>
+    <div class="fp-meta"><span id="fp1Left">現在 5,524万</span><span>目標 12,000万</span></div>
+  </div>
+  <div class="fp-card">
+    <div class="fp-label">保守目標（1.8億）達成進捗</div>
+    <div style="font-size:22px;color:var(--fire2c)" id="fp2Pct">―%</div>
+    <div class="fp-track"><div class="fp-fill" id="fp2Bar" style="width:0%;background:linear-gradient(90deg,var(--fire2c),var(--fire2c2))"></div></div>
+    <div class="fp-meta"><span>現在 5,524万</span><span>目標 18,000万</span></div>
+  </div>
+</div>
+
+<!-- ── MAIN GRID ── -->
+<div class="main">
+
+  <!-- CONTROLS -->
+  <div class="ctrl-panel">
+
+    <div class="ctrl-section">
+      <div class="ctrl-section-title"><div class="ctdot" style="background:var(--opt)"></div>現在資産 (万円)</div>
+      <div class="ctrl-rows">
+        <div class="ctrl-row">
+          <div class="ctrl-label">投資性資産 <span class="val" id="vInv">4,363万</span></div>
+          <input type="range" id="rInv" min="1000" max="10000" step="100" value="4363" oninput="onSlide('Inv',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">現金・預金 <span class="val" id="vCash">856万</span></div>
+          <input type="range" id="rCash" min="100" max="5000" step="50" value="856" oninput="onSlide('Cash',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">BTC/仮想通貨 <span class="val" id="vBtc">663万</span></div>
+          <input type="range" id="rBtc" min="0" max="5000" step="50" value="663" oninput="onSlide('Btc',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">確定拠出年金 <span class="val" id="vIdeco">587万</span></div>
+          <input type="range" id="rIdeco" min="0" max="3000" step="50" value="587" oninput="onSlide('Ideco',this)">
+        </div>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-section-title"><div class="ctdot" style="background:var(--std)"></div>収入・貯蓄</div>
+      <div class="ctrl-rows">
+        <div class="ctrl-row">
+          <div class="ctrl-label">手取り給与（月） <span class="val" id="vSalary">39万</span></div>
+          <input type="range" id="rSalary" min="20" max="100" step="1" value="39" oninput="onSlide('Salary',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">ボーナス（年） <span class="val" id="vBonus">200万</span></div>
+          <input type="range" id="rBonus" min="0" max="600" step="10" value="200" oninput="onSlide('Bonus',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">FX月収入（現在） <span class="val" id="vFx">0万</span></div>
+          <input type="range" id="rFx" min="0" max="80" step="1" value="0" oninput="onSlide('Fx',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">FX安定化まで <span class="val" id="vFxRamp">2年</span></div>
+          <input type="range" id="rFxRamp" min="0" max="5" step="1" value="2" oninput="onSlide('FxRamp',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">FX目標月収（安定後） <span class="val" id="vFxTarget">30万</span></div>
+          <input type="range" id="rFxTarget" min="0" max="80" step="5" value="30" oninput="onSlide('FxTarget',this)">
+        </div>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-section-title"><div class="ctdot" style="background:var(--con)"></div>支出</div>
+      <div class="ctrl-rows">
+        <div class="ctrl-row">
+          <div class="ctrl-label">生活費（月） <span class="val" id="vLiving">60万</span></div>
+          <input type="range" id="rLiving" min="30" max="120" step="1" value="60" oninput="onSlide('Living',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">教育費（年・ピーク） <span class="val" id="vEdu">200万</span></div>
+          <input type="range" id="rEdu" min="0" max="600" step="10" value="200" oninput="onSlide('Edu',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">教育費ピーク開始年 <span class="val" id="vEduStart">2031</span></div>
+          <input type="range" id="rEduStart" min="2028" max="2038" step="1" value="2031" oninput="onSlide('EduStart',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">教育費ピーク継続 <span class="val" id="vEduYears">8年</span></div>
+          <input type="range" id="rEduYears" min="1" max="20" step="1" value="8" oninput="onSlide('EduYears',this)">
+        </div>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-section-title"><div class="ctdot" style="background:var(--inv)"></div>投資リターン・目標</div>
+      <div class="ctrl-rows">
+        <div class="ctrl-row">
+          <div class="ctrl-label">投資利回り（年・楽観） <span class="val" id="vRetOpt">6%</span></div>
+          <input type="range" id="rRetOpt" min="1" max="15" step="0.5" value="6" oninput="onSlide('RetOpt',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">投資利回り（年・標準） <span class="val" id="vRetStd">4%</span></div>
+          <input type="range" id="rRetStd" min="1" max="12" step="0.5" value="4" oninput="onSlide('RetStd',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">投資利回り（年・保守） <span class="val" id="vRetCon">2%</span></div>
+          <input type="range" id="rRetCon" min="0" max="8" step="0.5" value="2" oninput="onSlide('RetCon',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">FIRE目標（楽観）億 <span class="val" id="vFire1">1.2億</span></div>
+          <input type="range" id="rFire1" min="5000" max="20000" step="500" value="12000" oninput="onSlide('Fire1',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">FIRE目標（保守）億 <span class="val" id="vFire2">1.8億</span></div>
+          <input type="range" id="rFire2" min="8000" max="30000" step="500" value="18000" oninput="onSlide('Fire2',this)">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">現在年齢 <span class="val" id="vAge">42</span></div>
+          <input type="range" id="rAge" min="35" max="55" step="1" value="42" oninput="onSlide('Age',this)">
+        </div>
+      </div>
+      <div style="margin-top:12px;text-align:right;">
+        <button class="reset-btn" onclick="resetAll()">パラメータをリセット</button>
+      </div>
+    </div>
+
+  </div><!-- /ctrl-panel -->
+
+  <!-- CHARTS -->
+  <div class="chart-panel">
+
+    <!-- Main chart -->
+    <div class="chart-box">
+      <div class="chart-header">
+        <div class="chart-title">資産推移グラフ — 3シナリオ</div>
+        <div class="chart-btns">
+          <button class="cbtn active" onclick="setChartMode('line',this)">推移</button>
+          <button class="cbtn" onclick="setChartMode('bar',this)">内訳</button>
+          <button class="cbtn" onclick="setChartMode('waterfall',this)">増減</button>
+        </div>
+      </div>
+      <div class="sc-legend">
+        <div class="sc-leg-item"><div class="sc-dot" style="background:var(--opt)"></div>楽観（投資+FX高）</div>
+        <div class="sc-leg-item"><div class="sc-dot" style="background:var(--std)"></div>標準（中間値）</div>
+        <div class="sc-leg-item"><div class="sc-dot" style="background:var(--con)"></div>保守（低成長）</div>
+        <div class="sc-leg-item"><div class="sc-dot" style="background:var(--fire1);border:1px dashed var(--fire1)"></div>FIRE目標ライン</div>
+      </div>
+      <div class="chart-area"><canvas id="mainChart"></canvas></div>
+    </div>
+
+    <!-- Cash flow chart -->
+    <div class="chart-box">
+      <div class="chart-header">
+        <div class="chart-title">年次収支内訳（標準シナリオ）</div>
+      </div>
+      <div class="chart-area" style="height:220px;"><canvas id="cfChart"></canvas></div>
+    </div>
+
+  </div><!-- /chart-panel -->
+</div><!-- /main -->
+
+<!-- ── SCENARIO RESULT CARDS ── -->
+<div class="sc-results" id="scResultCards"></div>
+
+<!-- ── ANNOTATION ── -->
+<div class="annotation" id="mainAnnotation">
+  <div class="ann-icon">📊</div>
+  <div>
+    <div class="ann-title" id="annTitle">分析中...</div>
+    <div class="ann-body" id="annBody">パラメータを調整すると分析が更新されます。</div>
+  </div>
+</div>
+
+<!-- ── ASSET BREAKDOWN ── -->
+<div class="breakdown-row">
+  <div class="breakdown-panel">
+    <div class="bp-title">現在資産構成</div>
+    <div class="asset-bars" id="assetBars"></div>
+  </div>
+  <div class="breakdown-panel">
+    <div class="bp-title">標準シナリオ — FIRE達成年の資産構成（推定）</div>
+    <div class="asset-bars" id="fireBars"></div>
+  </div>
+</div>
+
+<!-- ── YEAR TABLE ── -->
+<div class="year-table-wrap">
+  <div class="year-table-header">
+    <div class="chart-title" style="font-family:'Noto Serif JP',serif;font-size:13px;letter-spacing:2px;">年別資産推移詳細表</div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="year-table" id="yearTable"></table>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ════════════════════════════════════════
+// PARAMS
+// ════════════════════════════════════════
+const DEFAULTS = {
+  Inv:4363, Cash:856, Btc:663, Ideco:587,
+  Salary:39, Bonus:200, Fx:0, FxRamp:2, FxTarget:30,
+  Living:60, Edu:200, EduStart:2031, EduYears:8,
+  RetOpt:6, RetStd:4, RetCon:2,
+  Fire1:12000, Fire2:18000,
+  Age:42,
+};
+let P = {...DEFAULTS};
+
+const STORAGE_KEY = 'asset_sim_v1';
+function loadParams() {
+  try { const s=JSON.parse(localStorage.getItem(STORAGE_KEY)); if(s) P={...DEFAULTS,...s}; } catch(e){}
+}
+function saveParams() { localStorage.setItem(STORAGE_KEY, JSON.stringify(P)); }
+
+function resetAll() {
+  P = {...DEFAULTS};
+  syncSliders();
+  compute();
+  saveParams();
+}
+
+function syncSliders() {
+  Object.keys(DEFAULTS).forEach(k => {
+    const sl = document.getElementById('r'+k);
+    if (sl) { sl.value = P[k]; updateSliderLabel(k, P[k]); updateSliderTrack(sl); }
+  });
+}
+
+// ════════════════════════════════════════
+// SLIDER LOGIC
+// ════════════════════════════════════════
+const LABELS = {
+  Inv:'万', Cash:'万', Btc:'万', Ideco:'万',
+  Salary:'万', Bonus:'万', Fx:'万', FxRamp:'年', FxTarget:'万',
+  Living:'万', Edu:'万', EduStart:'', EduYears:'年',
+  RetOpt:'%', RetStd:'%', RetCon:'%',
+  Fire1:'', Fire2:'', Age:'',
+};
+const FORMATS = {
+  Fire1: v => (v/10000).toFixed(1)+'億',
+  Fire2: v => (v/10000).toFixed(1)+'億',
+  Age:   v => v+'歳',
+  FxRamp:v => v+'年',
+  EduStart:v => v+'年',
+  EduYears:v => v+'年',
+  RetOpt:v => v+'%', RetStd:v => v+'%', RetCon:v => v+'%',
+};
+
+function updateSliderLabel(k, v) {
+  const el = document.getElementById('v'+k);
+  if (!el) return;
+  el.textContent = FORMATS[k] ? FORMATS[k](v) : v+(LABELS[k]||'');
+}
+
+function updateSliderTrack(el) {
+  const min=parseFloat(el.min), max=parseFloat(el.max), val=parseFloat(el.value);
+  const pct = (val-min)/(max-min)*100;
+  el.style.setProperty('--pct', pct+'%');
+}
+
+function onSlide(k, el) {
+  P[k] = parseFloat(el.value);
+  updateSliderLabel(k, P[k]);
+  updateSliderTrack(el);
+  compute();
+  saveParams();
+}
+
+// ════════════════════════════════════════
+// SIMULATION ENGINE
+// ════════════════════════════════════════
+const START_YEAR = 2026;
+const END_YEAR   = 2055;
+const NOW_YEAR   = 2026;
+
+function simulate(retRate, fxMult) {
+  // fxMult: 0=none, 0.5=partial, 1=full target
+  const years = [];
+  let inv   = P.Inv;
+  let cash  = P.Cash;
+  let btc   = P.Btc;
+  let ideco = P.Ideco;
+
+  for (let y=START_YEAR; y<=END_YEAR; y++) {
+    const age = P.Age + (y - NOW_YEAR);
+    const isFire1Reached = (inv+cash+btc+ideco)*100 >= P.Fire1*100;
+
+    // ── INCOME ──
+    const salary = y <= 2033 ? P.Salary*12 : 0; // FIRE後は給与ゼロ
+    const bonus  = y <= 2033 ? P.Bonus : 0;
+
+    // FX income (ramps up over FxRamp years)
+    let fxAnnual = 0;
+    const fxRampEnd = NOW_YEAR + P.FxRamp;
+    if (y >= fxRampEnd) {
+      fxAnnual = P.FxTarget * 12 * fxMult;
+    } else if (y > NOW_YEAR) {
+      const progress = (y - NOW_YEAR) / P.FxRamp;
+      fxAnnual = P.FxTarget * 12 * fxMult * progress;
+    }
+
+    // Dividend from investment portfolio (3%)
+    const dividend = inv * 0.03;
+
+    // ── EXPENSES ──
+    const living = P.Living * 12;
+    let edu = 0;
+    if (y >= P.EduStart && y < P.EduStart + P.EduYears) {
+      edu = P.Edu;
+    }
+    // Social insurance after FIRE
+    const socialIns = y > 2033 ? 200 : 0;
+
+    // ── NET CASH FLOW ──
+    const inflow  = salary + bonus + fxAnnual + dividend;
+    const outflow = living + edu + socialIns;
+    const netCf   = inflow - outflow;
+
+    // ── INVESTMENT RETURNS ──
+    const invReturn = inv * (retRate/100);
+    const btcReturn = btc * 0.05; // conservative BTC growth
+    const idecoReturn = ideco * (retRate * 0.6/100);
+
+    // ── UPDATE BALANCES ──
+    // If positive cash flow → invest surplus
+    if (netCf > 0) {
+      inv += netCf * 0.7;
+      cash += netCf * 0.3;
+    } else {
+      // Draw from cash first, then investments
+      const deficit = -netCf;
+      if (cash >= deficit) {
+        cash -= deficit;
+      } else {
+        const remaining = deficit - cash;
+        cash = 0;
+        inv = Math.max(inv - remaining, 0);
+      }
+    }
+    inv   += invReturn;
+    btc   += btcReturn;
+    ideco += idecoReturn;
+
+    const total = inv + cash + btc + ideco;
+    years.push({y, age, inv, cash, btc, ideco, total,
+      inflow:Math.round(inflow), outflow:Math.round(outflow),
+      netCf:Math.round(netCf), fxAnnual:Math.round(fxAnnual),
+      salary:Math.round(salary), edu:Math.round(edu)});
+  }
+  return years;
+}
+
+// ════════════════════════════════════════
+// CHARTS
+// ════════════════════════════════════════
+let mainChart_=null, cfChart_=null;
+let chartMode = 'line';
+
+function setChartMode(mode, el) {
+  chartMode = mode;
+  document.querySelectorAll('.cbtn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  drawMainChart(window._simOpt, window._simStd, window._simCon);
+}
+
+function drawMainChart(opt, std, con) {
+  if (mainChart_) mainChart_.destroy();
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  const labels = opt.map(r=>r.y+'年\n'+r.age+'歳');
+
+  const fire1Line = opt.map(()=>P.Fire1/100);
+  const fire2Line = opt.map(()=>P.Fire2/100);
+
+  if (chartMode === 'line') {
+    mainChart_ = new Chart(ctx, {
+      type:'line',
+      data:{labels, datasets:[
+        {label:'楽観',data:opt.map(r=>Math.round(r.total/100)/100),
+          borderColor:'rgba(200,168,74,0.9)',backgroundColor:'rgba(200,168,74,0.06)',
+          borderWidth:2,pointRadius:2,pointHoverRadius:5,fill:true,tension:0.3},
+        {label:'標準',data:std.map(r=>Math.round(r.total/100)/100),
+          borderColor:'rgba(74,184,200,0.9)',backgroundColor:'rgba(74,184,200,0.04)',
+          borderWidth:2,pointRadius:2,pointHoverRadius:5,fill:true,tension:0.3},
+        {label:'保守',data:con.map(r=>Math.round(r.total/100)/100),
+          borderColor:'rgba(200,72,112,0.7)',backgroundColor:'rgba(200,72,112,0.03)',
+          borderWidth:2,pointRadius:2,pointHoverRadius:5,fill:true,tension:0.3},
+        {label:'目標（楽観）',data:fire1Line,
+          borderColor:'rgba(74,200,128,0.5)',borderDash:[8,5],
+          borderWidth:1.5,pointRadius:0,fill:false},
+        {label:'目標（保守）',data:fire2Line,
+          borderColor:'rgba(168,216,72,0.4)',borderDash:[5,5],
+          borderWidth:1,pointRadius:0,fill:false},
+      ]},
+      options:chartOpts('億円'),
+    });
+  } else if (chartMode === 'bar') {
+    mainChart_ = new Chart(ctx, {
+      type:'bar',
+      data:{labels, datasets:[
+        {label:'投資性資産',data:std.map(r=>Math.round(r.inv/100)/100),backgroundColor:'rgba(168,112,216,0.7)',stack:'s',borderRadius:1},
+        {label:'BTC',data:std.map(r=>Math.round(r.btc/100)/100),backgroundColor:'rgba(240,128,58,0.7)',stack:'s',borderRadius:1},
+        {label:'確定拠出',data:std.map(r=>Math.round(r.ideco/100)/100),backgroundColor:'rgba(74,158,216,0.6)',stack:'s',borderRadius:1},
+        {label:'現金',data:std.map(r=>Math.round(r.cash/100)/100),backgroundColor:'rgba(104,152,200,0.5)',stack:'s',borderRadius:1},
+        {label:'目標①',data:fire1Line,type:'line',borderColor:'rgba(74,200,128,0.5)',borderDash:[8,5],borderWidth:1.5,pointRadius:0,fill:false,stack:undefined},
+      ]},
+      options:chartOpts('億円',true),
+    });
+  } else { // waterfall = annual change
+    const diffs = std.map((r,i)=>i===0?0:Math.round((r.total-std[i-1].total)/100)/100);
+    mainChart_ = new Chart(ctx, {
+      type:'bar',
+      data:{labels, datasets:[{
+        label:'年間資産増減',data:diffs,
+        backgroundColor:diffs.map(v=>v>=0?'rgba(74,200,128,0.65)':'rgba(200,72,112,0.65)'),
+        borderColor:diffs.map(v=>v>=0?'rgba(74,200,128,1)':'rgba(200,72,112,1)'),
+        borderWidth:1,borderRadius:2,
+      }]},
+      options:chartOpts('億円'),
+    });
+  }
+}
+
+function chartOpts(unit, stacked=false) {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        backgroundColor:'#0e1520',borderColor:'#1c2d3c',borderWidth:1,
+        titleColor:'#c8a84a',bodyColor:'#d8eaf8',
+        callbacks:{
+          label:c=>{
+            if (c.dataset.label.startsWith('目標')) return ` ${c.dataset.label}: ${c.parsed.y.toFixed(2)}億`;
+            return ` ${c.dataset.label}: ${c.parsed.y.toFixed(2)}億円`;
+          }
+        }
+      }
+    },
+    scales:{
+      x:{stacked,grid:{color:'rgba(28,45,60,0.6)'},
+        ticks:{color:'#3a5a78',font:{family:'DM Mono',size:9},maxTicksLimit:15,maxRotation:45}},
+      y:{stacked,grid:{color:'rgba(28,45,60,0.6)'},
+        ticks:{color:'#3a5a78',font:{family:'DM Mono',size:9},callback:v=>v+'億'}}
+    }
+  };
+}
+
+function drawCfChart(std) {
+  if (cfChart_) cfChart_.destroy();
+  const ctx = document.getElementById('cfChart').getContext('2d');
+  const recent = std.filter(r=>r.y<=2040);
+  cfChart_ = new Chart(ctx, {
+    type:'bar',
+    data:{labels:recent.map(r=>r.y+''),datasets:[
+      {label:'給与・ボーナス',data:recent.map(r=>Math.round(r.salary/10000)),backgroundColor:'rgba(74,184,200,0.6)',stack:'in',borderRadius:1},
+      {label:'FX収入',data:recent.map(r=>Math.round(r.fxAnnual/10000)),backgroundColor:'rgba(212,168,64,0.6)',stack:'in',borderRadius:1},
+      {label:'支出',data:recent.map(r=>-Math.round(r.outflow/10000)),backgroundColor:'rgba(200,72,112,0.55)',stack:'out',borderRadius:1},
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#0e1520',borderColor:'#1c2d3c',borderWidth:1,
+          titleColor:'#c8a84a',bodyColor:'#d8eaf8'}},
+      scales:{
+        x:{stacked:true,grid:{color:'rgba(28,45,60,0.5)'},
+          ticks:{color:'#3a5a78',font:{family:'DM Mono',size:9},maxRotation:45}},
+        y:{stacked:true,grid:{color:'rgba(28,45,60,0.5)'},
+          ticks:{color:'#3a5a78',font:{family:'DM Mono',size:9},callback:v=>v+'万'}}
+      }
+    }
+  });
+}
+
+// ════════════════════════════════════════
+// FIND FIRE YEAR
+// ════════════════════════════════════════
+function findFireYear(sim, target) {
+  for (const r of sim) {
+    if (r.total >= target*10000) return {year:r.y, age:r.age, total:r.total};
+  }
+  return null;
+}
+
+// ════════════════════════════════════════
+// MAIN COMPUTE
+// ════════════════════════════════════════
+function compute() {
+  const opt = simulate(P.RetOpt, 1.2);  // FX × 1.2
+  const std = simulate(P.RetStd, 1.0);  // FX × 1.0
+  const con = simulate(P.RetCon, 0.0);  // FX なし
+
+  window._simOpt=opt; window._simStd=std; window._simCon=con;
+
+  // KPIs
+  const totalNow = (P.Inv+P.Cash+P.Btc+P.Ideco);
+  const gap1 = P.Fire1 - totalNow;
+  const gap2 = P.Fire2 - totalNow;
+  const monthlySave = P.Salary + P.Bonus/12 + P.FxTarget - P.Living;
+
+  document.getElementById('kGap1').innerHTML = Math.round(gap1)+'<span class="u">万</span>';
+  document.getElementById('kGap1Note').textContent = '目標まで '+Math.round(gap1/10000*10)/10+'億';
+  document.getElementById('kGap2').innerHTML = Math.round(gap2)+'<span class="u">万</span>';
+  document.getElementById('kGap2Note').textContent = '目標まで '+Math.round(gap2/10000*10)/10+'億';
+  document.getElementById('kSave').innerHTML = Math.round(monthlySave)+'<span class="u">万</span>';
+  document.getElementById('kFire1').innerHTML = (P.Fire1/10000).toFixed(1)+'<span class="u">億</span>';
+  document.getElementById('kFire2').innerHTML = (P.Fire2/10000).toFixed(1)+'<span class="u">億</span>';
+  document.getElementById('kSaveNote').textContent = 'FX'+P.FxTarget+'万含む';
+
+  // Progress bars
+  const pct1 = Math.min(totalNow/P.Fire1*100, 100);
+  const pct2 = Math.min(totalNow/P.Fire2*100, 100);
+  document.getElementById('fp1Pct').textContent = pct1.toFixed(1)+'%';
+  document.getElementById('fp2Pct').textContent = pct2.toFixed(1)+'%';
+  document.getElementById('fp1Bar').style.width  = pct1+'%';
+  document.getElementById('fp2Bar').style.width  = pct2+'%';
+  document.getElementById('fp1Left').textContent = '現在 '+Math.round(totalNow/100)*100/10000*100/100+'万';
+
+  // FIRE years
+  const fireOpt1 = findFireYear(opt, P.Fire1);
+  const fireStd1 = findFireYear(std, P.Fire1);
+  const fireCon1 = findFireYear(con, P.Fire1);
+  const fireOpt2 = findFireYear(opt, P.Fire2);
+  const fireStd2 = findFireYear(std, P.Fire2);
+  const fireCon2 = findFireYear(con, P.Fire2);
+
+  // Header ETA (standard, fire1)
+  const eta = fireStd1 || fireStd2;
+  if (eta) {
+    document.getElementById('etaYear').textContent = eta.year+'年';
+    document.getElementById('etaAge').textContent  = eta.age+'歳 / あと'+(eta.year-NOW_YEAR)+'年';
+  } else {
+    document.getElementById('etaYear').textContent = '2055年超';
+    document.getElementById('etaAge').textContent  = 'パラメータを調整してください';
+  }
+
+  // Scenario cards
+  buildScCards(opt, std, con, fireOpt1, fireStd1, fireCon1, fireOpt2, fireStd2, fireCon2);
+
+  // Charts
+  drawMainChart(opt, std, con);
+  drawCfChart(std);
+
+  // Asset bars
+  buildAssetBars(totalNow);
+  buildFireBars(std, fireStd1, fireStd2);
+
+  // Annotation
+  buildAnnotation(fireStd1, fireStd2, std, monthlySave);
+
+  // Year table
+  buildYearTable(opt, std, con);
+}
+
+// ════════════════════════════════════════
+// SCENARIO CARDS
+// ════════════════════════════════════════
+function buildScCards(opt, std, con, fo1, fs1, fc1, fo2, fs2, fc2) {
+  const scenarios = [
+    {cls:'opt', label:'楽観シナリオ', name:`投資${P.RetOpt}% / FX月${Math.round(P.FxTarget*1.2)}万`,
+      sim:opt, f1:fo1, f2:fo2, end:opt[opt.length-1]},
+    {cls:'std', label:'標準シナリオ', name:`投資${P.RetStd}% / FX月${P.FxTarget}万`,
+      sim:std, f1:fs1, f2:fs2, end:std[std.length-1]},
+    {cls:'con', label:'保守シナリオ', name:`投資${P.RetCon}% / FXなし`,
+      sim:con, f1:fc1, f2:fc2, end:con[con.length-1]},
+  ];
+
+  document.getElementById('scResultCards').innerHTML = scenarios.map(sc=>{
+    const f1txt = sc.f1 ? `${sc.f1.year}年（${sc.f1.age}歳）` : '2055年超';
+    const f2txt = sc.f2 ? `${sc.f2.year}年（${sc.f2.age}歳）` : '2055年超';
+    const end10  = Math.round(sc.end.total/100)/100;
+    const badgeTxt = sc.f1 ? `FIRE ${sc.f1.year}年 達成見込み` : (sc.f2 ? `保守FIRE ${sc.f2.year}年` : '要条件見直し');
+    return `<div class="sc-card ${sc.cls}">
+      <div class="sc-card-label">${sc.label}</div>
+      <div class="sc-card-name">${sc.name}</div>
+      <div class="sc-rows">
+        <div class="sc-row"><span class="sc-key">楽観目標(${(P.Fire1/10000).toFixed(1)}億)</span><span class="sc-val">${f1txt}</span></div>
+        <div class="sc-row"><span class="sc-key">保守目標(${(P.Fire2/10000).toFixed(1)}億)</span><span class="sc-val">${f2txt}</span></div>
+        <div class="sc-row"><span class="sc-key">2055年時点資産</span><span class="sc-val big">${end10}億</span></div>
+        <div class="sc-row"><span class="sc-key">月間純貯蓄（現在）</span>
+          <span class="sc-val">${Math.round(P.Salary+P.Bonus/12-P.Living)}万</span></div>
+      </div>
+      <div class="sc-fire-badge">${badgeTxt}</div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════
+// ASSET BARS
+// ════════════════════════════════════════
+function buildAssetBars(totalNow) {
+  const items = [
+    {label:'投資性資産（株・ETF・投信）', val:P.Inv, color:'var(--inv)'},
+    {label:'現金・預金',                  val:P.Cash, color:'var(--cash)'},
+    {label:'BTC/仮想通貨',               val:P.Btc,  color:'var(--btc)'},
+    {label:'確定拠出年金',               val:P.Ideco,color:'var(--std)'},
+  ];
+  const max = Math.max(...items.map(i=>i.val));
+  document.getElementById('assetBars').innerHTML = items.map(it=>`
+    <div class="asset-bar-row">
+      <div class="abar-label">${it.label}</div>
+      <div class="abar-wrap"><div class="abar-fill" style="width:${it.val/max*100}%;background:${it.color}"></div></div>
+      <div class="abar-val">${it.val}万</div>
+      <div class="abar-pct">${Math.round(it.val/totalNow*100)}%</div>
+    </div>`).join('');
+}
+
+function buildFireBars(std, f1, f2) {
+  const fireRow = f1 || f2 || std[std.length-1];
+  const total = fireRow.total;
+  const items = [
+    {label:'投資性資産', val:Math.round(fireRow.inv), color:'var(--inv)'},
+    {label:'現金・預金', val:Math.round(fireRow.cash), color:'var(--cash)'},
+    {label:'BTC',        val:Math.round(fireRow.btc),  color:'var(--btc)'},
+    {label:'確定拠出',  val:Math.round(fireRow.ideco), color:'var(--std)'},
+  ];
+  const max = Math.max(...items.map(i=>i.val));
+  const label = f1 ? `${f1.year}年（${f1.age}歳）時点` : 'シミュレーション末尾';
+  document.querySelector('.breakdown-panel:last-child .bp-title').textContent =
+    `標準シナリオ — ${label}の資産構成`;
+  document.getElementById('fireBars').innerHTML = items.map(it=>`
+    <div class="asset-bar-row">
+      <div class="abar-label">${it.label}</div>
+      <div class="abar-wrap"><div class="abar-fill" style="width:${max>0?it.val/max*100:0}%;background:${it.color}"></div></div>
+      <div class="abar-val">${Math.round(it.val/10000*10)/10}億</div>
+      <div class="abar-pct">${total>0?Math.round(it.val/total*100):0}%</div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════
+// ANNOTATION
+// ════════════════════════════════════════
+function buildAnnotation(fs1, fs2, std, monthlySave) {
+  const title = document.getElementById('annTitle');
+  const body  = document.getElementById('annBody');
+  const box   = document.getElementById('mainAnnotation');
+
+  if (fs1) {
+    const earlyYears = 2033 - fs1.year;
+    if (earlyYears > 0) {
+      box.style.borderColor='var(--fire1)';
+      title.textContent = `楽観目標を${fs1.year}年（${fs1.age}歳）に達成 — 目標より${earlyYears}年前倒し`;
+      body.innerHTML = `標準シナリオで${(P.Fire1/10000).toFixed(1)}億円を<strong>${fs1.year}年（${fs1.age}歳）</strong>に達成。当初目標2033年より<strong>${earlyYears}年の前倒し</strong>が見込めます。<br>FX月収${P.FxTarget}万円の安定化が最大のレバーです。現在の月間純貯蓄 <strong>${Math.round(monthlySave)}万円</strong> が複利で積み上がる構造を維持してください。`;
+    } else if (earlyYears < 0) {
+      box.style.borderColor='var(--warn)';
+      title.textContent = `楽観目標到達は${fs1.year}年（${fs1.age}歳）— 目標より${-earlyYears}年遅れ`;
+      body.innerHTML = `標準シナリオでの到達は<strong>${fs1.year}年（${fs1.age}歳）</strong>。FX収益の加速、または支出削減でギャップを縮められます。毎月<strong>${Math.round((P.Fire1*10000-std[0].total)/((fs1.year-NOW_YEAR)*12)/10000*10)/10}万円</strong>の積立ペース維持が鍵です。`;
+    } else {
+      box.style.borderColor='var(--fire1)';
+      title.textContent = `標準シナリオで${fs1.year}年（${fs1.age}歳）にFIRE達成`;
+      body.innerHTML = `目標年2033年ちょうどに達成の見込みです。現在のペースを維持すれば計画通りです。パラメータを上げて前倒しシナリオも検討してください。`;
+    }
+  } else if (fs2) {
+    box.style.borderColor='var(--fire2c)';
+    title.textContent = `保守目標（${(P.Fire2/10000).toFixed(1)}億）を${fs2.year}年（${fs2.age}歳）に達成`;
+    body.innerHTML = `楽観目標（${(P.Fire1/10000).toFixed(1)}億）には届きませんが、保守目標は<strong>${fs2.year}年（${fs2.age}歳）</strong>に達成見込みです。<br>FX収益を安定化させることで楽観目標に切り替えられます。`;
+  } else {
+    box.style.borderColor='var(--con)';
+    title.textContent = '現在のパラメータではFIRE目標に到達しない可能性があります';
+    body.innerHTML = `2055年時点でもFIRE目標に届かない試算です。<strong>支出削減</strong>（生活費 -5〜10万/月）または<strong>FX収益の安定化</strong>が必要です。保守目標を引き下げるか、FIREタイミングを後ろに調整することも検討してください。`;
+  }
+}
+
+// ════════════════════════════════════════
+// YEAR TABLE
+// ════════════════════════════════════════
+function buildYearTable(opt, std, con) {
+  const fireTargets = new Set();
+  [findFireYear(std, P.Fire1), findFireYear(std, P.Fire2)].forEach(f=>{ if(f) fireTargets.add(f.year); });
+
+  const rows = std.map((r,i)=>{
+    const optR=opt[i], conR=con[i];
+    const isFire = fireTargets.has(r.y);
+    const rowCls = isFire ? 'fire-hit' : (r.y>=2033?'fire-row':'');
+    const fireMark = isFire ? '<span class="fire-mark">★FIRE</span>' : '';
+    return `<tr class="${rowCls}">
+      <td>${r.y}年${fireMark}</td>
+      <td>${r.age}歳</td>
+      <td style="color:var(--opt)">${(Math.round(optR.total/100)/100).toFixed(2)}億</td>
+      <td style="color:var(--std)">${(Math.round(r.total/100)/100).toFixed(2)}億</td>
+      <td style="color:var(--con)">${(Math.round(conR.total/100)/100).toFixed(2)}億</td>
+      <td style="color:var(--fx)">${r.fxAnnual>0?Math.round(r.fxAnnual/10000*10)/10+'万':'―'}</td>
+      <td style="color:${r.netCf>=0?'var(--fire1)':'var(--con)'}">${r.netCf>=0?'+':''}${Math.round(r.netCf/10000*10)/10}万</td>
+      <td style="color:var(--t2)">${r.edu>0?Math.round(r.edu/10000*10)/10+'万':'―'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('yearTable').innerHTML = `
+    <thead><tr>
+      <th>年</th><th>年齢</th>
+      <th style="color:var(--opt)">楽観 資産</th>
+      <th style="color:var(--std)">標準 資産</th>
+      <th style="color:var(--con)">保守 資産</th>
+      <th>FX年収</th><th>年間純CF</th><th>教育費</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>`;
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+loadParams();
+
+const scr = document.createElement('script');
+scr.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+scr.onload = () => {
+  syncSliders();
+  // init slider tracks
+  document.querySelectorAll('input[type=range]').forEach(updateSliderTrack);
+  compute();
+};
+document.head.appendChild(scr);
+</script>
+</body>
+</html>

@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>教育費シミュレーター 完全版</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0b0f14; --panel:#111820; --panel2:#161e28; --panel3:#1a2432;
+  --border:#1e2d3e; --border2:#253548;
+  --akari:#e07848; --akari2:#f0a878; --akari-bg:rgba(224,120,72,0.08);
+  --c2:#4a9ed8; --c2-2:#7abce8; --c2-bg:rgba(74,158,216,0.08);
+  --pub:#5aaa7a; --pub2:#80cc98; --pub-bg:rgba(90,170,122,0.08);
+  --priv:#c07050; --priv2:#e09070;
+  --gold:#d4a843; --gold2:#f0c866;
+  --warn:#c08030; --danger:#c04040; --ok:#4aaa6a;
+  --text:#dce8f0; --text2:#8aa0b8; --text3:#4a6278; --text4:#2a3a4a;
+  --shadow:0 2px 16px rgba(0,0,0,0.4);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;
+  background-image:radial-gradient(ellipse 100% 60% at 15% 0%,rgba(224,120,72,0.04) 0%,transparent 60%),
+    radial-gradient(ellipse 80% 50% at 85% 100%,rgba(74,158,216,0.04) 0%,transparent 60%);}
+
+/* ── LAYOUT ── */
+.app{max-width:1360px;margin:0 auto;padding:40px 20px 80px;}
+
+/* ── HEADER ── */
+.hdr{margin-bottom:40px;}
+.hdr-eye{font-size:10px;letter-spacing:4px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;}
+.hdr-title{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;font-style:italic;line-height:1;}
+.hdr-title .a{color:var(--akari);}
+.hdr-title .c{color:var(--c2);}
+.hdr-meta{font-size:11px;color:var(--text3);letter-spacing:2px;margin-top:8px;}
+.badges{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;}
+.badge{padding:5px 14px;border:1px solid;font-size:9px;letter-spacing:2px;text-transform:uppercase;}
+.badge.akari{border-color:var(--akari);color:var(--akari);}
+.badge.c2{border-color:var(--c2);color:var(--c2);}
+.badge.fire{border-color:var(--gold);color:var(--gold);}
+
+/* ── TABS (main navigation) ── */
+.main-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:28px;}
+.main-tab{padding:10px 22px;font-size:10px;letter-spacing:2px;color:var(--text3);background:transparent;
+  border:none;border-bottom:2px solid transparent;cursor:pointer;text-transform:uppercase;margin-bottom:-1px;
+  font-family:'DM Mono',monospace;transition:all .2s;}
+.main-tab.active{color:var(--akari);border-bottom-color:var(--akari);}
+.main-tab:hover{color:var(--text);}
+
+/* ── SECTION ── */
+.section{display:none;} .section.active{display:block;}
+
+/* ── SUMMARY STRIP ── */
+.summary{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);
+  border:1px solid var(--border);margin-bottom:28px;box-shadow:var(--shadow);}
+.sum{background:var(--panel);padding:16px 14px;}
+.sum-label{font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;}
+.sum-val{font-size:20px;font-weight:300;line-height:1;}
+.sum-val .u{font-size:10px;color:var(--text2);margin-left:2px;}
+.sum-note{font-size:9px;color:var(--text2);margin-top:3px;}
+
+/* ── PANEL ── */
+.panel{background:var(--panel);border:1px solid var(--border);padding:22px;box-shadow:var(--shadow);}
+.panel-title{font-family:'Noto Serif JP',serif;font-size:13px;letter-spacing:2px;
+  margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;}
+.ptdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+/* ── PATTERN COMPARE ── */
+.pattern-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+.pattern-card{background:var(--panel);border:2px solid var(--border);padding:20px;cursor:pointer;transition:all .2s;position:relative;}
+.pattern-card:hover{border-color:var(--border2);}
+.pattern-card.selected{border-color:var(--akari);}
+.pattern-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--akari),transparent);opacity:0;transition:opacity .2s;}
+.pattern-card.selected::after{opacity:1;}
+.pcard-badge{font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;
+  padding:2px 8px;border:1px solid;display:inline-block;}
+.pcard-name{font-family:'Noto Serif JP',serif;font-size:14px;letter-spacing:1px;margin-bottom:8px;}
+.pcard-amt{font-size:28px;font-weight:300;color:var(--gold);line-height:1;margin-bottom:4px;}
+.pcard-amt .u{font-size:12px;color:var(--text2);}
+.pcard-note{font-size:10px;color:var(--text2);}
+.pcard-stages{margin-top:12px;display:flex;flex-direction:column;gap:4px;}
+.pcard-row{display:flex;justify-content:space-between;font-size:10px;padding:3px 0;
+  border-bottom:1px solid var(--border);}
+.pcard-row:last-child{border-bottom:none;}
+.pcard-row .v{color:var(--text2);}
+
+/* ── COMPARE TABLE ── */
+.compare-wrap{overflow-x:auto;}
+.compare-table{width:100%;border-collapse:collapse;font-size:11px;}
+.compare-table th{padding:10px 14px;background:var(--panel2);border-bottom:1px solid var(--border);
+  font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;}
+.compare-table th:first-child{text-align:left;}
+.compare-table td{padding:9px 14px;border-bottom:1px solid rgba(30,45,62,0.6);text-align:right;}
+.compare-table td:first-child{text-align:left;font-family:'Noto Serif JP',serif;}
+.compare-table tr:hover td{background:rgba(255,255,255,0.02);}
+.compare-table .highlight{color:var(--akari);font-weight:400;}
+.compare-table .pub{color:var(--pub);}
+.compare-table .priv{color:var(--priv2);}
+.compare-table .total-row td{font-weight:500;background:var(--panel2);border-top:1px solid var(--border2);}
+.diff-badge{font-size:8px;padding:1px 6px;border:1px solid;margin-left:4px;white-space:nowrap;}
+
+/* ── ROUTE BUILDER ── */
+.route-builder{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+.child-route{background:var(--panel);border:1px solid var(--border);padding:20px;}
+.child-route-title{font-family:'Noto Serif JP',serif;font-size:12px;letter-spacing:2px;
+  margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.stage-rows{display:flex;flex-direction:column;gap:8px;}
+.stage-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;
+  border-bottom:1px solid rgba(30,45,62,0.4);}
+.stage-row:last-child{border-bottom:none;}
+.stage-name{font-size:11px;color:var(--text2);min-width:120px;}
+.seg-ctrl{display:flex;border:1px solid var(--border2);overflow:hidden;}
+.seg-btn{padding:5px 12px;font-size:9px;letter-spacing:1px;background:transparent;
+  color:var(--text3);border:none;cursor:pointer;transition:all .15s;font-family:'DM Mono',monospace;}
+.seg-btn.active-pub{background:var(--pub-bg);color:var(--pub);border-right:1px solid var(--border2);}
+.seg-btn.active-priv{background:rgba(192,112,80,0.15);color:var(--priv2);}
+.seg-btn:hover{color:var(--text);}
+.stage-cost-preview{font-size:10px;color:var(--text3);min-width:80px;text-align:right;}
+
+/* ── OPTIONS ── */
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+.opt-panel{background:var(--panel);border:1px solid var(--border);padding:20px;}
+.opt-panel-title{font-size:10px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;
+  margin-bottom:14px;}
+.opt-rows{display:flex;flex-direction:column;gap:10px;}
+.opt-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;
+  border-bottom:1px solid rgba(30,45,62,0.4);}
+.opt-row:last-child{border-bottom:none;}
+.opt-lbl{font-size:11px;color:var(--text);}
+.opt-sub{font-size:9px;color:var(--text3);margin-top:1px;}
+.opt-inp{background:var(--panel2);border:1px solid var(--border2);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:12px;padding:6px 10px;width:110px;
+  outline:none;text-align:right;transition:border-color .2s;}
+.opt-inp:focus{border-color:var(--akari);}
+.opt-sel{background:var(--panel2);border:1px solid var(--border2);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:11px;padding:6px 8px;outline:none;
+  transition:border-color .2s;}
+.opt-sel:focus{border-color:var(--akari);}
+.opt-unit{font-size:10px;color:var(--text3);margin-left:4px;}
+.chk-grp{display:flex;gap:14px;}
+.chk-wrap{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;}
+.chk-wrap input{accent-color:var(--akari);width:13px;height:13px;}
+
+/* ── CASHFLOW CHART ── */
+.chart-area{position:relative;height:300px;margin-top:12px;}
+
+/* ── CF TABLE ── */
+.cf-wrap{overflow-x:auto;max-height:460px;overflow-y:auto;}
+.cf-table{width:100%;border-collapse:collapse;font-size:10px;}
+.cf-table th{padding:8px 12px;background:var(--panel2);border-bottom:1px solid var(--border);
+  font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;
+  position:sticky;top:0;z-index:1;}
+.cf-table td{padding:8px 12px;border-bottom:1px solid rgba(30,45,62,0.5);text-align:right;}
+.cf-table td:first-child{text-align:left;}
+.cf-table tr:hover td{background:rgba(255,255,255,0.02);}
+.cf-table .fire-row td{background:rgba(192,64,64,0.05);}
+.cf-table .fire-row td:first-child{color:var(--danger);}
+.cf-table .peak-cell{color:var(--danger);font-weight:500;}
+.cf-table .zero{color:var(--text4);}
+.cf-table .total-row td{font-weight:500;background:var(--panel2);border-top:1px solid var(--border2);}
+
+/* ── FIRE ALERT ── */
+.fire-alert{border:1px solid;padding:16px 20px;margin-bottom:24px;display:flex;gap:14px;}
+.fire-alert.danger{border-color:var(--danger);background:rgba(192,64,64,0.06);}
+.fire-alert.warn{border-color:var(--warn);background:rgba(192,128,48,0.06);}
+.fire-alert.ok{border-color:var(--ok);background:rgba(74,170,106,0.06);}
+.alert-icon{font-size:20px;flex-shrink:0;margin-top:2px;}
+.alert-title{font-family:'Noto Serif JP',serif;font-size:13px;margin-bottom:5px;}
+.fire-alert.danger .alert-title{color:var(--danger);}
+.fire-alert.warn .alert-title{color:var(--warn);}
+.fire-alert.ok .alert-title{color:var(--ok);}
+.alert-body{font-size:11px;color:var(--text2);line-height:1.8;}
+.alert-body strong{color:var(--text);}
+
+/* ── SAVING PLANS ── */
+.saving-plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+.saving-plan{background:var(--panel);border:1px solid var(--border);padding:20px;}
+.sp-badge{font-size:8px;letter-spacing:2px;padding:2px 8px;border:1px solid;
+  display:inline-block;margin-bottom:10px;}
+.sp-name{font-family:'Noto Serif JP',serif;font-size:13px;letter-spacing:1px;margin-bottom:12px;}
+.sp-rows{display:flex;flex-direction:column;gap:8px;}
+.sp-row{display:flex;justify-content:space-between;align-items:baseline;
+  padding:5px 0;border-bottom:1px solid rgba(30,45,62,0.5);}
+.sp-row:last-child{border-bottom:none;}
+.sp-k{font-size:10px;color:var(--text2);}
+.sp-v{font-size:14px;color:var(--text);}
+.sp-v.big{font-size:20px;color:var(--akari);}
+.sp-v.c2c{color:var(--c2);}
+.sp-v.sm{font-size:11px;color:var(--text2);}
+
+/* ── SCHOLARSHIP ── */
+.scholarship-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.sch-calc{background:var(--panel);border:1px solid var(--border);padding:20px;}
+.sch-title{font-family:'Noto Serif JP',serif;font-size:13px;letter-spacing:2px;
+  margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.sch-plan-rows{display:flex;flex-direction:column;gap:0;}
+.sch-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:0;
+  border-bottom:1px solid rgba(30,45,62,0.5);}
+.sch-row:last-child{border-bottom:none;}
+.sch-cell{padding:9px 10px;font-size:10px;}
+.sch-row.header .sch-cell{font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;
+  background:var(--panel2);}
+.sch-row:hover .sch-cell{background:rgba(255,255,255,0.02);}
+.repay-table{width:100%;border-collapse:collapse;font-size:10px;max-height:280px;overflow-y:auto;display:block;}
+.repay-table th{padding:7px 10px;background:var(--panel2);border-bottom:1px solid var(--border);
+  font-size:8px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;position:sticky;top:0;}
+.repay-table td{padding:7px 10px;border-bottom:1px solid rgba(30,45,62,0.4);text-align:right;}
+.repay-table td:first-child{text-align:left;}
+.repay-table tr:hover td{background:rgba(255,255,255,0.02);}
+.repay-table .total-row td{font-weight:500;background:var(--panel2);}
+
+/* ── LEGEND ── */
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text2);}
+.ldot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+
+/* ── UTILITY ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.mt{margin-top:20px;}
+.mb{margin-bottom:20px;}
+.c-akari{color:var(--akari);} .c-c2{color:var(--c2);} .c-pub{color:var(--pub);}
+.c-gold{color:var(--gold);} .c-warn{color:var(--warn);} .c-danger{color:var(--danger);}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.section.active>*{animation:fadeIn .4s ease both;}
+
+@media(max-width:960px){
+  .pattern-grid{grid-template-columns:1fr 1fr;}
+  .route-builder,.options-grid,.scholarship-grid,.saving-plans{grid-template-columns:1fr;}
+  .summary{grid-template-columns:1fr 1fr 1fr;}
+  .hdr-title{font-size:36px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-eye">Education Cost Full Simulator</div>
+  <h1 class="hdr-title">教育費<span class="a">あかり</span> &<span class="c"> 第2子</span></h1>
+  <div class="hdr-meta">幼稚園〜大学 / 全パターン比較 / 奨学金・ローン / FIRE照合 / 積立逆算</div>
+  <div class="badges">
+    <div class="badge akari">あかり — 2025年生 (0歳)</div>
+    <div class="badge c2" id="c2Badge">第2子 — 2026年生予定</div>
+    <div class="badge fire" id="fireBadge">FIRE目標 2033年</div>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div class="summary">
+  <div class="sum"><div class="sum-label">あかり 総額</div>
+    <div class="sum-val c-akari" id="sAkari">― <span class="u">万</span></div>
+    <div class="sum-note" id="sAkariNote">―</div></div>
+  <div class="sum"><div class="sum-label">第2子 総額</div>
+    <div class="sum-val c-c2" id="sC2">― <span class="u">万</span></div>
+    <div class="sum-note" id="sC2Note">―</div></div>
+  <div class="sum"><div class="sum-label">2人合計</div>
+    <div class="sum-val c-gold" id="sTotal">― <span class="u">万</span></div>
+    <div class="sum-note" id="sTotalNote">―</div></div>
+  <div class="sum"><div class="sum-label">FIRE後教育費</div>
+    <div class="sum-val c-warn" id="sFireAfter">― <span class="u">万</span></div>
+    <div class="sum-note" id="sFireNote">―</div></div>
+  <div class="sum"><div class="sum-label">ピーク年・金額</div>
+    <div class="sum-val c-danger" id="sPeak">―</div>
+    <div class="sum-note" id="sPeakNote">―</div></div>
+  <div class="sum"><div class="sum-label">月次積立必要額</div>
+    <div class="sum-val c-akari" id="sMonthly">― <span class="u">万/月</span></div>
+    <div class="sum-note" id="sMonthlyNote">―</div></div>
+</div>
+
+<!-- FIRE ALERT -->
+<div id="fireAlertBox" class="fire-alert warn">
+  <div class="alert-icon">！</div>
+  <div><div class="alert-title" id="alertTitle">分析中...</div>
+  <div class="alert-body" id="alertBody">ルートを選択すると表示されます。</div></div>
+</div>
+
+<!-- MAIN TABS -->
+<div class="main-tabs">
+  <button class="main-tab active" onclick="switchTab('compare')">全パターン比較</button>
+  <button class="main-tab" onclick="switchTab('custom')">カスタム設定</button>
+  <button class="main-tab" onclick="switchTab('cashflow')">年別CF・グラフ</button>
+  <button class="main-tab" onclick="switchTab('saving')">積立シミュレーション</button>
+  <button class="main-tab" onclick="switchTab('scholarship')">奨学金・ローン</button>
+</div>
+
+<!-- ════════════════ TAB 1: COMPARE ════════════════ -->
+<div class="section active" id="tab-compare">
+  <div class="pattern-grid" id="patternCards"></div>
+
+  <div class="panel">
+    <div class="panel-title"><div class="ptdot" style="background:var(--gold)"></div>全パターン詳細比較</div>
+    <div class="compare-wrap">
+      <table class="compare-table" id="compareTable"></table>
+    </div>
+  </div>
+
+  <div class="panel mt">
+    <div class="panel-title"><div class="ptdot" style="background:var(--c2)"></div>段階別費用内訳（参考単価）</div>
+    <div class="compare-wrap">
+      <table class="compare-table" id="stageRef"></table>
+    </div>
+    <div style="font-size:9px;color:var(--text3);margin-top:10px;letter-spacing:1px;">
+      ※ 文部科学省「子供の学習費調査」「国立大学授業料等」2024年水準。習い事・留学・大学院費用は別途。
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 2: CUSTOM ════════════════ -->
+<div class="section" id="tab-custom">
+  <div class="route-builder">
+    <div class="child-route">
+      <div class="child-route-title" style="color:var(--akari)">あかり（2025年生）</div>
+      <div class="stage-rows" id="akariStages"></div>
+    </div>
+    <div class="child-route">
+      <div class="child-route-title" style="color:var(--c2)">第2子（<span id="c2RouteYear">2026</span>年生）</div>
+      <div class="stage-rows" id="c2Stages"></div>
+    </div>
+  </div>
+
+  <div class="options-grid">
+    <div class="opt-panel">
+      <div class="opt-panel-title">基本設定</div>
+      <div class="opt-rows">
+        <div class="opt-row">
+          <div><div class="opt-lbl">第2子 誕生年</div></div>
+          <select class="opt-sel" id="c2Birth" onchange="onOpt()">
+            <option value="2026">2026年後半</option>
+            <option value="2027">2027年</option>
+            <option value="2028">2028年</option>
+          </select>
+        </div>
+        <div class="opt-row">
+          <div><div class="opt-lbl">FIRE予定年</div></div>
+          <select class="opt-sel" id="fireYear" onchange="onOpt()">
+            <option value="2031">2031年 (49歳)</option>
+            <option value="2032">2032年 (50歳)</option>
+            <option value="2033" selected>2033年 (51歳)</option>
+            <option value="2035">2035年 (53歳)</option>
+          </select>
+        </div>
+        <div class="opt-row">
+          <div><div class="opt-lbl">積立利回り（年）</div></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" class="opt-inp" id="saveRate" value="3.0" step="0.5" min="0" max="10" onchange="onOpt()" />
+            <span class="opt-unit">%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-panel">
+      <div class="opt-panel-title">オプション費用</div>
+      <div class="opt-rows">
+        <div class="opt-row">
+          <div><div class="opt-lbl">習い事・塾（あかり）</div><div class="opt-sub">小学校以降 月額</div></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" class="opt-inp" id="clubA" value="30000" onchange="onOpt()" />
+            <span class="opt-unit">円/月</span>
+          </div>
+        </div>
+        <div class="opt-row">
+          <div><div class="opt-lbl">習い事・塾（第2子）</div><div class="opt-sub">小学校以降 月額</div></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" class="opt-inp" id="clubC" value="30000" onchange="onOpt()" />
+            <span class="opt-unit">円/月</span>
+          </div>
+        </div>
+        <div class="opt-row">
+          <div><div class="opt-lbl">海外留学（大学在籍中）</div><div class="opt-sub">1〜2年 各+200万円</div></div>
+          <div class="chk-grp">
+            <label class="chk-wrap"><input type="checkbox" id="abroadA" onchange="onOpt()" /><span>あかり</span></label>
+            <label class="chk-wrap"><input type="checkbox" id="abroadC" onchange="onOpt()" /><span>第2子</span></label>
+          </div>
+        </div>
+        <div class="opt-row">
+          <div><div class="opt-lbl">大学院進学</div><div class="opt-sub">2年追加</div></div>
+          <div class="chk-grp">
+            <label class="chk-wrap"><input type="checkbox" id="gradA" onchange="onOpt()" /><span>あかり</span></label>
+            <label class="chk-wrap"><input type="checkbox" id="gradC" onchange="onOpt()" /><span>第2子</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 3: CASHFLOW ════════════════ -->
+<div class="section" id="tab-cashflow">
+  <div class="panel mb">
+    <div class="panel-title"><div class="ptdot" style="background:var(--akari)"></div>年別教育費キャッシュフロー</div>
+    <div class="legend">
+      <div class="legend-item"><div class="ldot" style="background:rgba(224,120,72,0.7)"></div>あかり</div>
+      <div class="legend-item"><div class="ldot" style="background:rgba(74,158,216,0.7)"></div>第2子</div>
+      <div class="legend-item"><div class="ldot" style="background:rgba(192,64,64,0.2);border:1px dashed var(--danger)"></div>FIRE後（濃い色）</div>
+    </div>
+    <div class="chart-area"><canvas id="cfChart"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title"><div class="ptdot" style="background:var(--c2)"></div>年別詳細表</div>
+    <div class="cf-wrap" id="cfTableWrap"></div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 4: SAVING ════════════════ -->
+<div class="section" id="tab-saving">
+  <div class="saving-plans" id="savingPlans"></div>
+
+  <div class="g2">
+    <div class="panel">
+      <div class="panel-title"><div class="ptdot" style="background:var(--akari)"></div>あかり 積立シミュレーション</div>
+      <div class="chart-area"><canvas id="saveChartA"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title"><div class="ptdot" style="background:var(--c2)"></div>第2子 積立シミュレーション</div>
+      <div class="chart-area"><canvas id="saveChartC"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel mt">
+    <div class="panel-title"><div class="ptdot" style="background:var(--gold)"></div>積立プラン詳細比較</div>
+    <div class="compare-wrap"><table class="compare-table" id="savingCompareTable"></table></div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 5: SCHOLARSHIP ════════════════ -->
+<div class="section" id="tab-scholarship">
+  <div class="scholarship-grid">
+    <div class="sch-calc">
+      <div class="sch-title">奨学金シミュレーション（子供1人あたり）</div>
+      <div class="opt-rows mb" style="margin-bottom:16px;">
+        <div class="opt-row">
+          <div><div class="opt-lbl">奨学金タイプ</div></div>
+          <select class="opt-sel" id="schType" onchange="calcScholarship()">
+            <option value="jasso1">JASSO 第一種（無利子）</option>
+            <option value="jasso2" selected>JASSO 第二種（有利子）</option>
+            <option value="univ">大学独自給付型</option>
+            <option value="loan">教育ローン（公庫）</option>
+          </select>
+        </div>
+        <div class="opt-row">
+          <div><div class="opt-lbl">借入総額</div></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" class="opt-inp" id="schAmount" value="3000000" onchange="calcScholarship()" />
+            <span class="opt-unit">円</span>
+          </div>
+        </div>
+        <div class="opt-row">
+          <div><div class="opt-lbl">返済期間</div></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" class="opt-inp" id="schYears" value="15" min="1" max="20" onchange="calcScholarship()" />
+            <span class="opt-unit">年</span>
+          </div>
+        </div>
+        <div class="opt-row">
+          <div><div class="opt-lbl">利率（年）</div></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" class="opt-inp" id="schRate" value="0.4" step="0.1" min="0" max="5" onchange="calcScholarship()" />
+            <span class="opt-unit">%</span>
+          </div>
+        </div>
+        <div class="opt-row">
+          <div><div class="opt-lbl">返済開始年</div></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" class="opt-inp" id="schStart" value="2048" onchange="calcScholarship()" />
+            <span class="opt-unit">年</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="schResult" style="border:1px solid var(--border);padding:16px;background:var(--panel2);">
+        <div style="font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:10px;">試算結果</div>
+        <div class="sp-rows" id="schResultRows"></div>
+      </div>
+    </div>
+
+    <div class="sch-calc">
+      <div class="sch-title">子供の返済シミュレーション（年別）</div>
+      <div style="max-height:400px;overflow-y:auto;">
+        <table class="repay-table" id="repayTable">
+          <thead><tr>
+            <th>返済年</th><th>子供の年齢</th><th>月額返済</th><th>年間返済</th><th>残高</th>
+          </tr></thead>
+          <tbody id="repayBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel mt">
+    <div class="panel-title"><div class="ptdot" style="background:var(--text3)"></div>奨学金タイプ比較</div>
+    <div class="sch-plan-rows" id="schTypeCompare">
+      <div class="sch-row header">
+        <div class="sch-cell">タイプ</div>
+        <div class="sch-cell">月額（大学中）</div>
+        <div class="sch-cell">総借入</div>
+        <div class="sch-cell">総返済額</div>
+        <div class="sch-cell">利息負担</div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:var(--text3);margin-top:10px;letter-spacing:1px;">
+      ※ JASSO基準月額。大学・自宅外の場合。給付型は返済不要。利率はJASSO 2024年実績ベース。
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+<script>
+// ════════════════════════════════════════
+// COST DATA
+// ════════════════════════════════════════
+const STAGES = [
+  {id:'nursery', name:'保育園 (0-2歳)',  years:3, pub:360000,  priv:680000,  startAge:0},
+  {id:'kinder',  name:'幼稚園 (3-5歳)',  years:3, pub:220000,  priv:580000,  startAge:3},
+  {id:'elem',    name:'小学校 (6-11歳)', years:6, pub:350000,  priv:1670000, startAge:6},
+  {id:'junior',  name:'中学校 (12-14歳)',years:3, pub:530000,  priv:1430000, startAge:12},
+  {id:'senior',  name:'高校 (15-17歳)',  years:3, pub:510000,  priv:1050000, startAge:15},
+  {id:'univ',    name:'大学 (18-21歳)',  years:4, pub:600000,  priv:1300000, startAge:18},
+];
+
+const PATTERNS = [
+  {id:'all-pub',  name:'全公立ルート',      badge:'最低コスト',  routes:['pub','pub','pub','pub','pub','pub']},
+  {id:'standard', name:'標準ルート',        badge:'一般的',      routes:['pub','pub','pub','pub','priv','priv']},
+  {id:'semi-priv',name:'中高私立ルート',    badge:'中堅家庭',    routes:['pub','priv','pub','priv','priv','priv']},
+  {id:'all-priv', name:'全私立ルート',      badge:'最大コスト',  routes:['priv','priv','priv','priv','priv','priv']},
+];
+
+const AKARI_BIRTH = 2025;
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const S = {
+  akariRoute: ['pub','pub','pub','pub','priv','priv'],
+  c2Route:    ['pub','pub','pub','pub','priv','priv'],
+  c2Birth: 2026, fireYear: 2033,
+  clubA: 30000, clubC: 30000,
+  abroadA:false, abroadC:false,
+  gradA:false, gradC:false,
+  saveRate: 3.0,
+  selectedPattern: 'standard',
+};
+
+// ════════════════════════════════════════
+// COMPUTE COSTS
+// ════════════════════════════════════════
+function computeCosts(route, birth, clubMonthly, abroad, grad) {
+  const costs = {};
+  STAGES.forEach((st, i) => {
+    const annual = route[i]==='priv' ? st.priv : st.pub;
+    for (let y=0; y<st.years; y++) {
+      const yr = birth + st.startAge + y;
+      costs[yr] = (costs[yr]||0) + annual;
+      if (i>=2) costs[yr] += clubMonthly*12; // 小学校以降は塾費
+    }
+  });
+  if (abroad) {
+    [1,2].forEach(off => { const yr = birth+18+off; costs[yr]=(costs[yr]||0)+2000000; });
+  }
+  if (grad) {
+    const r = route[5]==='priv' ? 1100000 : 550000;
+    [0,1].forEach(off => { const yr = birth+22+off; costs[yr]=(costs[yr]||0)+r; });
+  }
+  return costs;
+}
+
+function totalOf(costs) { return Object.values(costs).reduce((s,v)=>s+v,0); }
+
+function costsForPattern(pat, birth, clubMonthly, abroad, grad) {
+  return computeCosts(pat.routes, birth, clubMonthly, abroad, grad);
+}
+
+function monthlyRequired(total, birth, rateAnnual) {
+  const now = new Date().getFullYear();
+  const univStart = birth + 18;
+  const months = Math.max((univStart - now)*12, 1);
+  const r = rateAnnual/100/12;
+  if (r===0) return total/months;
+  return total*r/(Math.pow(1+r,months)-1);
+}
+
+// ════════════════════════════════════════
+// MAIN RENDER
+// ════════════════════════════════════════
+let cfChart=null, saveChartA_=null, saveChartC_=null;
+
+function render() {
+  const akariCosts = computeCosts(S.akariRoute, AKARI_BIRTH, S.clubA, S.abroadA, S.gradA);
+  const c2Costs    = computeCosts(S.c2Route,    S.c2Birth,   S.clubC, S.abroadC, S.gradC);
+  const akariTotal = totalOf(akariCosts);
+  const c2Total    = totalOf(c2Costs);
+  const grand      = akariTotal + c2Total;
+
+  // Year range
+  const endYear = Math.max(
+    AKARI_BIRTH + 22 + (S.gradA?2:0) + (S.abroadA?1:0),
+    S.c2Birth   + 22 + (S.gradC?2:0) + (S.abroadC?1:0)
+  );
+  const years = [];
+  for (let y=2026; y<=endYear; y++) years.push(y);
+  const akariArr = years.map(y=>akariCosts[y]||0);
+  const c2Arr    = years.map(y=>c2Costs[y]||0);
+  const totArr   = years.map((_,i)=>akariArr[i]+c2Arr[i]);
+
+  // After fire
+  const fireYears = years.filter(y=>y>=S.fireYear);
+  const afterFire = fireYears.reduce((s,y)=>{
+    const i=years.indexOf(y); return s+totArr[i];
+  },0);
+
+  let peakY=null, peakAmt=0;
+  fireYears.forEach(y=>{ const i=years.indexOf(y); if(totArr[i]>peakAmt){peakAmt=totArr[i];peakY=y;} });
+
+  // Monthly saving
+  const mA = monthlyRequired(akariTotal, AKARI_BIRTH, S.saveRate);
+  const mC = monthlyRequired(c2Total,    S.c2Birth,   S.saveRate);
+
+  // ── SUMMARY ──
+  document.getElementById('sAkari').innerHTML = Math.round(akariTotal/10000)+' <span class="u">万</span>';
+  document.getElementById('sAkariNote').textContent = S.akariRoute.filter(r=>r==='priv').length+'段階私立';
+  document.getElementById('sC2').innerHTML   = Math.round(c2Total/10000)+' <span class="u">万</span>';
+  document.getElementById('sC2Note').textContent = S.c2Route.filter(r=>r==='priv').length+'段階私立';
+  document.getElementById('sTotal').innerHTML = Math.round(grand/10000)+' <span class="u">万</span>';
+  document.getElementById('sTotalNote').textContent = '習い事含む';
+  document.getElementById('sFireAfter').innerHTML = Math.round(afterFire/10000)+' <span class="u">万</span>';
+  document.getElementById('sFireNote').textContent = S.fireYear+'年以降累計';
+  document.getElementById('sPeak').textContent = peakY ? peakY+'年 '+Math.round(peakAmt/10000)+'万' : 'なし';
+  document.getElementById('sPeakNote').textContent = peakY ? '月換算 '+Math.round(peakAmt/120000)/10+'万' : 'FIRE前に完結';
+  document.getElementById('sMonthly').innerHTML = (Math.round((mA+mC)/1000)/10).toFixed(1)+' <span class="u">万/月</span>';
+  document.getElementById('sMonthlyNote').textContent = '利回り'+S.saveRate+'%想定';
+
+  // ── BADGES ──
+  document.getElementById('c2Badge').textContent = '第2子 — '+S.c2Birth+'年生予定';
+  document.getElementById('fireBadge').textContent = 'FIRE目標 '+S.fireYear+'年';
+
+  // ── FIRE ALERT ──
+  updateAlert(peakY, peakAmt, afterFire);
+
+  // ── CASHFLOW CHART ──
+  drawCfChart(years, akariArr, c2Arr);
+
+  // ── CF TABLE ──
+  buildCfTable(years, akariArr, c2Arr, totArr);
+
+  // ── SAVING PLANS ──
+  buildSavingPlans(akariTotal, c2Total, mA, mC);
+
+  // ── SAVING CHARTS ──
+  drawSavingChart('saveChartA', saveChartA_, akariTotal, AKARI_BIRTH, S.saveRate, 'akari');
+  drawSavingChart('saveChartC', saveChartC_, c2Total,    S.c2Birth,   S.saveRate, 'c2');
+}
+
+// ════════════════════════════════════════
+// PATTERN COMPARE (Tab 1)
+// ════════════════════════════════════════
+function buildCompare() {
+  const cards = document.getElementById('patternCards');
+  const allPatterns = [...PATTERNS];
+
+  // Calculate for each pattern
+  const results = allPatterns.map(pat => {
+    const aC = costsForPattern(pat, AKARI_BIRTH, S.clubA, S.abroadA, S.gradA);
+    const cC = costsForPattern(pat, S.c2Birth,   S.clubC, S.abroadC, S.gradC);
+    const at = totalOf(aC), ct = totalOf(cC);
+    const grand = at+ct;
+    const endY = Math.max(AKARI_BIRTH+22+(S.gradA?2:0), S.c2Birth+22+(S.gradC?2:0));
+    let afterFire=0, peakAmt=0, peakY=null;
+    for (let y=S.fireYear; y<=endY; y++) {
+      const v=(aC[y]||0)+(cC[y]||0);
+      afterFire+=v;
+      if(v>peakAmt){peakAmt=v;peakY=y;}
+    }
+    const mA=monthlyRequired(at, AKARI_BIRTH, S.saveRate);
+    const mC=monthlyRequired(ct, S.c2Birth, S.saveRate);
+    return {pat, at, ct, grand, afterFire, peakY, peakAmt, monthly:mA+mC};
+  });
+
+  const minGrand = Math.min(...results.map(r=>r.grand));
+
+  // Pattern cards
+  const colorMap = {'all-pub':'#5aaa7a','standard':'#d4a843','semi-priv':'#c07050','all-priv':'#c04040'};
+  cards.innerHTML = results.map(r=>{
+    const col = colorMap[r.pat.id];
+    const diff = r.grand - minGrand;
+    const isSel = S.selectedPattern===r.pat.id;
+    return `<div class="pattern-card${isSel?' selected':''}" onclick="selectPattern('${r.pat.id}')" style="${isSel?'border-color:'+col:''}">
+      <div class="pcard-badge" style="border-color:${col};color:${col}">${r.pat.badge}</div>
+      <div class="pcard-name">${r.pat.name}</div>
+      <div class="pcard-amt" style="color:${col}">${Math.round(r.grand/10000)}<span class="u">万円</span></div>
+      <div class="pcard-note">月${(Math.round(r.monthly/1000)/10).toFixed(1)}万積立 / FIRE後${Math.round(r.afterFire/10000)}万</div>
+      <div class="pcard-stages">
+        ${STAGES.map((st,i)=>`<div class="pcard-row"><span>${st.name.split(' ')[0]}</span>
+          <span class="v" style="color:${r.pat.routes[i]==='priv'?'var(--priv2)':'var(--pub)'}">${r.pat.routes[i]==='priv'?'私立':'公立'}</span></div>`).join('')}
+      </div>
+      ${diff>0?`<div style="font-size:9px;color:${col};margin-top:8px;">全公立比 +${Math.round(diff/10000)}万</div>`:''}
+    </div>`;
+  }).join('');
+
+  // Compare table
+  const tbl = document.getElementById('compareTable');
+  const items = [
+    {label:'あかり 総教育費', vals: results.map(r=>Math.round(r.at/10000)+'万'), cls:'c-akari'},
+    {label:'第2子 総教育費',  vals: results.map(r=>Math.round(r.ct/10000)+'万'), cls:'c-c2'},
+    {label:'2人合計',         vals: results.map(r=>Math.round(r.grand/10000)+'万'), cls:'c-gold'},
+    {label:'FIRE後教育費',    vals: results.map(r=>Math.round(r.afterFire/10000)+'万'), cls:'c-warn'},
+    {label:'月次積立必要額',  vals: results.map(r=>(Math.round(r.monthly/1000)/10).toFixed(1)+'万'), cls:''},
+    {label:'ピーク年',        vals: results.map(r=>r.peakY?r.peakY+'年':'―'), cls:'c-danger'},
+    {label:'ピーク金額',      vals: results.map(r=>r.peakY?Math.round(r.peakAmt/10000)+'万':'―'), cls:''},
+  ];
+  tbl.innerHTML = `<thead><tr><th>項目</th>${results.map(r=>`<th style="color:${colorMap[r.pat.id]}">${r.pat.name}</th>`).join('')}</tr></thead>
+    <tbody>${items.map(row=>`<tr><td>${row.label}</td>${row.vals.map((v,i)=>`<td class="${row.cls||''}">${v}</td>`).join('')}</tr>`).join('')}</tbody>`;
+
+  // Stage ref table
+  buildStageRef();
+}
+
+function selectPattern(id) {
+  S.selectedPattern = id;
+  const pat = PATTERNS.find(p=>p.id===id);
+  S.akariRoute = [...pat.routes];
+  S.c2Route    = [...pat.routes];
+  buildRouteControls();
+  buildCompare();
+  render();
+}
+
+function buildStageRef() {
+  const tbl = document.getElementById('stageRef');
+  tbl.innerHTML = `<thead><tr>
+    <th>段階</th><th>公立 年額</th><th>私立 年額</th><th>期間</th><th>公立 合計</th><th>私立 合計</th><th>差額</th>
+  </tr></thead><tbody>`+
+  STAGES.map(st=>`<tr>
+    <td>${st.name}</td>
+    <td class="pub">${(st.pub/10000).toFixed(0)}万</td>
+    <td class="priv">${(st.priv/10000).toFixed(0)}万</td>
+    <td>${st.years}年</td>
+    <td class="pub">${(st.pub*st.years/10000).toFixed(0)}万</td>
+    <td class="priv">${(st.priv*st.years/10000).toFixed(0)}万</td>
+    <td style="color:var(--warn)">+${((st.priv-st.pub)*st.years/10000).toFixed(0)}万</td>
+  </tr>`).join('')+'</tbody>';
+}
+
+// ════════════════════════════════════════
+// ROUTE BUILDER (Tab 2)
+// ════════════════════════════════════════
+function buildRouteControls() {
+  ['akariStages','c2Stages'].forEach((elId,ci)=>{
+    const el = document.getElementById(elId);
+    const who = ci===0 ? 'A' : 'C';
+    const route = ci===0 ? S.akariRoute : S.c2Route;
+    const birth = ci===0 ? AKARI_BIRTH : S.c2Birth;
+    el.innerHTML = STAGES.map((st,i)=>{
+      const isPub = route[i]==='pub';
+      const cost = isPub ? st.pub : st.priv;
+      return `<div class="stage-row">
+        <div class="stage-name">${st.name}</div>
+        <div class="seg-ctrl">
+          <button class="seg-btn ${isPub?'active-pub':''}" onclick="setRoute('${who}',${i},'pub')">公立</button>
+          <button class="seg-btn ${!isPub?'active-priv':''}" onclick="setRoute('${who}',${i},'priv')">私立</button>
+        </div>
+        <div class="stage-cost-preview" style="color:${isPub?'var(--pub)':'var(--priv2)'}">
+          年${(cost/10000).toFixed(0)}万
+        </div>
+      </div>`;
+    }).join('');
+  });
+  document.getElementById('c2RouteYear').textContent = S.c2Birth;
+}
+
+function setRoute(who, idx, val) {
+  if (who==='A') S.akariRoute[idx]=val;
+  else           S.c2Route[idx]=val;
+  S.selectedPattern='custom';
+  buildRouteControls();
+  buildCompare();
+  render();
+}
+
+function onOpt() {
+  S.c2Birth    = parseInt(document.getElementById('c2Birth').value);
+  S.fireYear   = parseInt(document.getElementById('fireYear').value);
+  S.saveRate   = parseFloat(document.getElementById('saveRate').value)||3;
+  S.clubA      = parseInt(document.getElementById('clubA').value)||0;
+  S.clubC      = parseInt(document.getElementById('clubC').value)||0;
+  S.abroadA    = document.getElementById('abroadA').checked;
+  S.abroadC    = document.getElementById('abroadC').checked;
+  S.gradA      = document.getElementById('gradA').checked;
+  S.gradC      = document.getElementById('gradC').checked;
+  buildCompare();
+  buildRouteControls();
+  render();
+}
+
+// ════════════════════════════════════════
+// FIRE ALERT
+// ════════════════════════════════════════
+function updateAlert(peakY, peakAmt, afterFire) {
+  const box  = document.getElementById('fireAlertBox');
+  const titl = document.getElementById('alertTitle');
+  const body = document.getElementById('alertBody');
+  const icon = box.querySelector('.alert-icon');
+  if (!peakY) {
+    box.className='fire-alert ok'; icon.textContent='✓';
+    titl.textContent='FIRE前に教育費が完結します';
+    body.innerHTML=`${S.fireYear}年のFIRE前に2人の教育費が完了する試算です。教育費のFIRE後負担はほぼゼロです。`;
+    return;
+  }
+  const akariAge=peakY-AKARI_BIRTH, c2Age=peakY-S.c2Birth;
+  const mon=Math.round(peakAmt/120000)/10;
+  if (afterFire>10000000) {
+    box.className='fire-alert danger'; icon.textContent='⚠';
+    titl.textContent=`FIRE後の教育費が重い — 累計${Math.round(afterFire/10000)}万円`;
+    body.innerHTML=`FIRE後（${S.fireYear}年以降）累計<strong>${Math.round(afterFire/10000)}万円</strong>。ピークは<strong>${peakY}年（あかり${akariAge}歳・第2子${c2Age}歳）月換算${mon}万円</strong>。<br>FIRE目標額に教育費バッファを<strong>最低${Math.round(afterFire/10000)}万円</strong>上乗せしてください。または今からNISAで専用積立を開始することを推奨します。`;
+  } else {
+    box.className='fire-alert warn'; icon.textContent='！';
+    titl.textContent=`FIRE後に教育費ピーク — 事前積立で対応可能`;
+    body.innerHTML=`FIRE後累計<strong>${Math.round(afterFire/10000)}万円</strong>（ピーク${peakY}年、月${mon}万円）。<br>今から年利${S.saveRate}%で積み立てれば吸収可能な水準です。NISA成長投資枠での教育費専用口座を推奨します。`;
+  }
+}
+
+// ════════════════════════════════════════
+// CASHFLOW CHART
+// ════════════════════════════════════════
+function drawCfChart(years, akariArr, c2Arr) {
+  if (cfChart) cfChart.destroy();
+  const ctx = document.getElementById('cfChart').getContext('2d');
+  const fy = S.fireYear;
+  cfChart = new Chart(ctx, {
+    type:'bar',
+    data:{labels:years,datasets:[
+      {label:'あかり',data:akariArr.map(v=>Math.round(v/10000)),stack:'s',
+        backgroundColor:years.map(y=>y>=fy?'rgba(224,120,72,0.8)':'rgba(224,120,72,0.4)'),
+        borderColor:years.map(y=>y>=fy?'rgba(224,120,72,1)':'rgba(224,120,72,0.6)'),
+        borderWidth:1,borderRadius:2},
+      {label:'第2子',data:c2Arr.map(v=>Math.round(v/10000)),stack:'s',
+        backgroundColor:years.map(y=>y>=fy?'rgba(74,158,216,0.8)':'rgba(74,158,216,0.4)'),
+        borderColor:years.map(y=>y>=fy?'rgba(74,158,216,1)':'rgba(74,158,216,0.6)'),
+        borderWidth:1,borderRadius:2},
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#111820',borderColor:'#1e2d3e',borderWidth:1,
+          titleColor:'#d4a843',bodyColor:'#dce8f0',
+          callbacks:{
+            title:c=>`${c[0].label}年`,
+            label:c=>` ${c.dataset.label}: ${c.parsed.y}万円`,
+            footer:it=>`合計: ${it.reduce((s,i)=>s+i.parsed.y,0)}万円`
+          }}
+      },
+      scales:{
+        x:{stacked:true,grid:{color:'rgba(30,45,62,0.6)'},ticks:{color:'#4a6278',font:{family:'DM Mono',size:10},maxRotation:45}},
+        y:{stacked:true,grid:{color:'rgba(30,45,62,0.6)'},ticks:{color:'#4a6278',font:{family:'DM Mono',size:10},callback:v=>v+'万'}}
+      }
+    }
+  });
+}
+
+// ════════════════════════════════════════
+// CASHFLOW TABLE
+// ════════════════════════════════════════
+function buildCfTable(years, akariArr, c2Arr, totArr) {
+  const maxT = Math.max(...totArr);
+  const rows = years.map((y,i)=>{
+    const a=akariArr[i],c=c2Arr[i],t=totArr[i];
+    if(t===0) return '';
+    const isF=y>=S.fireYear, isP=isF&&t===maxT&&t>0;
+    return `<tr class="${isF?'fire-row':''}">
+      <td>${y}<br><span style="font-size:9px;color:var(--text3)">あかり${y-AKARI_BIRTH}歳${y-S.c2Birth>=0?'/第2子'+(y-S.c2Birth)+'歳':''}</span></td>
+      <td class="${a>0?'c-akari':'zero'}">${a>0?Math.round(a/10000)+'万':'―'}</td>
+      <td class="${c>0?'c-c2':'zero'}">${c>0?Math.round(c/10000)+'万':'―'}</td>
+      <td class="${isP?'peak-cell':''}">${t>0?Math.round(t/10000)+'万':'―'}</td>
+      <td style="font-size:9px;color:var(--text3)">${isF?'▶ FIRE後':''}</td>
+    </tr>`;
+  }).join('');
+  const sA=akariArr.reduce((s,v)=>s+v,0),sC=c2Arr.reduce((s,v)=>s+v,0),sT=totArr.reduce((s,v)=>s+v,0);
+  document.getElementById('cfTableWrap').innerHTML = `<table class="cf-table">
+    <thead><tr><th>年 / 年齢</th><th>あかり</th><th>第2子</th><th>合計</th><th>備考</th></tr></thead>
+    <tbody>${rows}<tr class="total-row"><td>合計</td><td>${Math.round(sA/10000)}万</td><td>${Math.round(sC/10000)}万</td><td>${Math.round(sT/10000)}万</td><td></td></tr></tbody>
+  </table>`;
+}
+
+// ════════════════════════════════════════
+// SAVING PLANS
+// ════════════════════════════════════════
+function buildSavingPlans(akariTotal, c2Total, mA, mC) {
+  const plans = [
+    {id:'nisa', badge:'推奨', name:'NISA成長投資枠', rate:4.0, tax:false, color:'var(--pub)'},
+    {id:'idx',  badge:'バランス', name:'インデックス投信', rate:3.0, tax:true, color:'var(--gold)'},
+    {id:'ins',  badge:'安全志向', name:'学資保険相当', rate:1.5, tax:false, color:'var(--c2)'},
+  ];
+  const wrap = document.getElementById('savingPlans');
+  wrap.innerHTML = plans.map(pl=>{
+    const mAp = monthlyRequired(akariTotal, AKARI_BIRTH, pl.rate);
+    const mCp = monthlyRequired(c2Total,    S.c2Birth,   pl.rate);
+    const tot  = mAp+mCp;
+    return `<div class="saving-plan">
+      <div class="sp-badge" style="border-color:${pl.color};color:${pl.color}">${pl.badge}</div>
+      <div class="sp-name">${pl.name}</div>
+      <div class="sp-rows">
+        <div class="sp-row"><span class="sp-k">想定利回り</span><span class="sp-v">${pl.rate}%</span></div>
+        <div class="sp-row"><span class="sp-k">あかり月積立</span><span class="sp-v c-akari">${(Math.round(mAp/1000)/10).toFixed(1)}万円</span></div>
+        <div class="sp-row"><span class="sp-k">第2子月積立</span><span class="sp-v c2c">${(Math.round(mCp/1000)/10).toFixed(1)}万円</span></div>
+        <div class="sp-row"><span class="sp-k">合計月積立</span><span class="sp-v big" style="color:${pl.color}">${(Math.round(tot/1000)/10).toFixed(1)}万円</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Saving compare table
+  const tbl = document.getElementById('savingCompareTable');
+  const rows2 = plans.map(pl=>{
+    const mAp=monthlyRequired(akariTotal,AKARI_BIRTH,pl.rate);
+    const mCp=monthlyRequired(c2Total,S.c2Birth,pl.rate);
+    const nisamA=monthlyRequired(akariTotal,AKARI_BIRTH,4.0);
+    const nisamC=monthlyRequired(c2Total,S.c2Birth,4.0);
+    const diff=(mAp+mCp)-(nisamA+nisamC);
+    return `<tr><td>${pl.name}</td><td>${pl.rate}%</td>
+      <td style="color:var(--akari)">${(Math.round(mAp/1000)/10).toFixed(1)}万</td>
+      <td style="color:var(--c2)">${(Math.round(mCp/1000)/10).toFixed(1)}万</td>
+      <td style="color:${pl.id==='nisa'?'var(--pub)':'var(--warn)'}">${(Math.round((mAp+mCp)/1000)/10).toFixed(1)}万</td>
+      <td style="font-size:10px;color:var(--text3)">${pl.id==='nisa'?'基準':diff>0?'+'+( Math.round(diff/1000)/10).toFixed(1)+'万/月':''}</td>
+    </tr>`;
+  }).join('');
+  tbl.innerHTML = `<thead><tr><th>プラン</th><th>利回り</th><th>あかり月積立</th><th>第2子月積立</th><th>合計月積立</th><th>NISA比差額</th></tr></thead><tbody>${rows2}</tbody>`;
+}
+
+function drawSavingChart(canvasId, existing, total, birth, rate, who) {
+  const now = new Date().getFullYear();
+  const univStart = birth+18;
+  const months = Math.max((univStart-now)*12, 1);
+  const r = rate/100/12;
+  const pmt = r===0 ? total/months : total*r/(Math.pow(1+r,months)-1);
+
+  const labels=[], saveLine=[], targetLine=[];
+  for (let m=0; m<=months; m+=6) {
+    const y = now + m/12;
+    labels.push(Math.round(y)+'年');
+    const fv = r===0 ? pmt*m : pmt*(Math.pow(1+r,m)-1)/r;
+    saveLine.push(Math.round(fv/10000));
+    targetLine.push(Math.round(total/10000));
+  }
+
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const existing_ = who==='akari' ? saveChartA_ : saveChartC_;
+  if (existing_) existing_.destroy();
+  const col = who==='akari' ? 'rgba(224,120,72' : 'rgba(74,158,216';
+  const nc = new Chart(ctx, {
+    type:'line',
+    data:{labels,datasets:[
+      {label:'積立累計',data:saveLine,borderColor:col+',1)',backgroundColor:col+',0.1)',
+        fill:true,tension:0.3,pointRadius:3,pointBackgroundColor:col+',1)'},
+      {label:'目標額',data:targetLine,borderColor:'rgba(212,168,67,0.4)',borderDash:[6,4],
+        borderWidth:1,pointRadius:0,fill:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#111820',borderColor:'#1e2d3e',borderWidth:1,
+          titleColor:'#d4a843',bodyColor:'#dce8f0'}},
+      scales:{
+        x:{grid:{color:'rgba(30,45,62,0.5)'},ticks:{color:'#4a6278',font:{family:'DM Mono',size:9},maxTicksLimit:8}},
+        y:{grid:{color:'rgba(30,45,62,0.5)'},ticks:{color:'#4a6278',font:{family:'DM Mono',size:9},callback:v=>v+'万'}}
+      }}
+  });
+  if (who==='akari') saveChartA_=nc; else saveChartC_=nc;
+}
+
+// ════════════════════════════════════════
+// SCHOLARSHIP
+// ════════════════════════════════════════
+const SCH_PRESETS = {
+  jasso1: {rate:0, label:'JASSO第一種（無利子）', monthly:64000, totalBase:3072000},
+  jasso2: {rate:0.4, label:'JASSO第二種（有利子）', monthly:80000, totalBase:3840000},
+  univ:   {rate:0, label:'大学独自給付型', monthly:0, totalBase:0},
+  loan:   {rate:1.9, label:'教育ローン（国の教育ローン）', monthly:0, totalBase:0},
+};
+
+function calcScholarship() {
+  const type  = document.getElementById('schType').value;
+  const amt   = parseInt(document.getElementById('schAmount').value)||3000000;
+  const yrs   = parseInt(document.getElementById('schYears').value)||15;
+  const rate  = parseFloat(document.getElementById('schRate').value)||0;
+  const start = parseInt(document.getElementById('schStart').value)||2048;
+  const child = 'あかり'; // assuming first child
+
+  const r = rate/100/12;
+  const n = yrs*12;
+  const pmt = r===0 ? amt/n : amt*r*(Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+  const totalRepay = pmt*n;
+  const interest = totalRepay - amt;
+
+  const rows = document.getElementById('schResultRows');
+  rows.innerHTML = `
+    <div class="sp-row"><span class="sp-k">月額返済額</span><span class="sp-v">${Math.round(pmt).toLocaleString()}円</span></div>
+    <div class="sp-row"><span class="sp-k">年間返済額</span><span class="sp-v">${Math.round(pmt*12).toLocaleString()}円</span></div>
+    <div class="sp-row"><span class="sp-k">総返済額</span><span class="sp-v">${Math.round(totalRepay).toLocaleString()}円</span></div>
+    <div class="sp-row"><span class="sp-k">利息負担合計</span><span class="sp-v ${interest>0?'c-warn':'c-pub'}">${Math.round(interest).toLocaleString()}円</span></div>
+    <div class="sp-row"><span class="sp-k">完済年</span><span class="sp-v">${start+yrs}年</span></div>
+  `;
+
+  // Repay table
+  const tbody = document.getElementById('repayBody');
+  let balance = amt;
+  let html = '';
+  for (let m=1; m<=n; m++) {
+    const interest_m = balance*r;
+    const principal_m = pmt - interest_m;
+    balance = Math.max(balance - principal_m, 0);
+    if (m%12===0) {
+      const yr = start + Math.floor(m/12) - 1;
+      const childAge = yr - AKARI_BIRTH;
+      html += `<tr>
+        <td>${yr}年</td>
+        <td>${childAge}歳</td>
+        <td>${Math.round(pmt).toLocaleString()}円</td>
+        <td>${Math.round(pmt*12).toLocaleString()}円</td>
+        <td>${Math.round(balance).toLocaleString()}円</td>
+      </tr>`;
+    }
+  }
+  html += `<tr class="total-row"><td>合計</td><td>―</td><td>―</td><td>${Math.round(pmt*12).toLocaleString()}円×${yrs}年</td><td>完済</td></tr>`;
+  tbody.innerHTML = html;
+
+  // Type comparison
+  buildSchTypeCompare();
+}
+
+function buildSchTypeCompare() {
+  const base = 3000000;
+  const rows = [
+    {name:'JASSO第一種（無利子）', monthly:64000, rate:0, years:15},
+    {name:'JASSO第二種（有利子）', monthly:80000, rate:0.4, years:15},
+    {name:'給付型（返済不要）',    monthly:48000, rate:0, years:0, noRepay:true},
+    {name:'国の教育ローン',        monthly:0, rate:1.9, years:15, custom:true},
+  ];
+  const wrap = document.getElementById('schTypeCompare');
+  const existing = wrap.querySelectorAll('.sch-row:not(.header)');
+  existing.forEach(e=>e.remove());
+
+  rows.forEach(r=>{
+    const n=r.years*12;
+    const rate=r.rate/100/12;
+    const pmt=r.monthly||( rate===0?base/n : base*rate*Math.pow(1+rate,n)/(Math.pow(1+rate,n)-1) );
+    const total=r.noRepay?0:pmt*n;
+    const interest=r.noRepay?-base:total-base;
+    const row=document.createElement('div');
+    row.className='sch-row';
+    row.innerHTML=`
+      <div class="sch-cell">${r.name}</div>
+      <div class="sch-cell" style="color:var(--c2)">${r.noRepay?'給付（返済なし）':Math.round(pmt).toLocaleString()+'円'}</div>
+      <div class="sch-cell" style="color:var(--text2)">${r.noRepay?'―':(base/10000)+'万円'}</div>
+      <div class="sch-cell" style="color:var(--text2)">${r.noRepay?'0円':Math.round(total).toLocaleString()+'円'}</div>
+      <div class="sch-cell" style="color:${interest<=0?'var(--pub)':'var(--warn)'}">${interest<=0?'0円（恩恵）':Math.round(interest).toLocaleString()+'円'}</div>`;
+    wrap.appendChild(row);
+  });
+}
+
+// ════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════
+function switchTab(id) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.main-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+const scr = document.createElement('script');
+scr.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+scr.onload=()=>{
+  buildRouteControls();
+  buildCompare();
+  render();
+  calcScholarship();
+};
+document.head.appendChild(scr);
+</script>
+</body>
+</html>

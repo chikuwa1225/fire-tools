@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FX月次トラッカー — FIRE連動版</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Serif+JP:wght@300;400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080c10;
+  --panel: #0d1218;
+  --panel2: #111820;
+  --border: #1e2a36;
+  --border2: #253040;
+  --gold: #d4a843;
+  --gold2: #f0c866;
+  --teal: #3ec9c0;
+  --red: #e05c5c;
+  --green: #4ecf89;
+  --blue: #4a9edd;
+  --text: #d8e0e8;
+  --text-dim: #6a7a8a;
+  --text-muted: #384858;
+  --glow: rgba(212,168,67,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'JetBrains Mono',monospace; min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(212,168,67,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(62,201,192,0.04) 0%, transparent 60%);
+}
+
+/* ── LAYOUT ── */
+.app{max-width:1280px;margin:0 auto;padding:32px 20px;}
+.header{margin-bottom:36px;}
+.header-eyebrow{font-size:10px;letter-spacing:5px;color:var(--gold);text-transform:uppercase;margin-bottom:8px;opacity:0.8;}
+.header-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:64px;letter-spacing:4px;line-height:0.9;
+  background:linear-gradient(135deg,var(--gold2),var(--gold),#a07828);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.header-sub{font-size:11px;color:var(--text-dim);letter-spacing:2px;margin-top:8px;}
+.fire-badge{
+  display:inline-block;margin-top:10px;padding:4px 12px;
+  border:1px solid var(--gold);color:var(--gold);
+  font-size:9px;letter-spacing:3px;text-transform:uppercase;
+  background:rgba(212,168,67,0.06);
+}
+
+/* ── KPI BAR ── */
+.kpi-bar{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:12px;
+  margin-bottom:28px;
+}
+.kpi{
+  background:var(--panel);border:1px solid var(--border);
+  padding:16px 18px;position:relative;overflow:hidden;
+}
+.kpi::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--gold),transparent);
+  opacity:0;transition:opacity 0.3s;
+}
+.kpi:hover::before{opacity:1;}
+.kpi-label{font-size:8px;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;}
+.kpi-val{font-size:24px;font-weight:300;line-height:1;}
+.kpi-val .unit{font-size:11px;color:var(--text-dim);margin-left:2px;}
+.kpi-note{font-size:9px;color:var(--text-dim);margin-top:4px;}
+.c-gold{color:var(--gold);}
+.c-green{color:var(--green);}
+.c-red{color:var(--red);}
+.c-teal{color:var(--teal);}
+.c-blue{color:var(--blue);}
+
+/* ── FIRE STATUS ── */
+.fire-status{
+  padding:14px 20px;border:1px solid var(--border);
+  background:var(--panel);margin-bottom:28px;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.fire-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.fire-dot.optimistic{background:var(--green);box-shadow:0 0 10px var(--green);}
+.fire-dot.standard{background:var(--gold);box-shadow:0 0 10px var(--gold);}
+.fire-dot.conservative{background:var(--red);box-shadow:0 0 10px var(--red);}
+.fire-status-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--text-dim);}
+.fire-status-val{font-size:13px;letter-spacing:1px;}
+.fire-divider{width:1px;height:24px;background:var(--border2);}
+.fire-progress-wrap{flex:1;min-width:200px;}
+.fire-progress-label{font-size:9px;color:var(--text-muted);letter-spacing:2px;margin-bottom:4px;}
+.fire-progress-track{height:3px;background:var(--border2);position:relative;overflow:hidden;}
+.fire-progress-fill{height:100%;transition:width 0.8s cubic-bezier(0.4,0,0.2,1);}
+
+/* ── MAIN GRID ── */
+.main-grid{display:grid;grid-template-columns:1fr 400px;gap:20px;margin-bottom:28px;}
+
+/* ── CHART AREA ── */
+.chart-panel{background:var(--panel);border:1px solid var(--border);padding:22px;}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.chart-title{font-family:'Noto Serif JP',serif;font-size:13px;letter-spacing:2px;}
+.chart-tabs{display:flex;gap:4px;}
+.chart-tab{
+  font-size:9px;letter-spacing:2px;padding:4px 10px;cursor:pointer;
+  border:1px solid var(--border2);color:var(--text-dim);text-transform:uppercase;
+  background:transparent;transition:all 0.2s;
+}
+.chart-tab.active{border-color:var(--gold);color:var(--gold);background:rgba(212,168,67,0.08);}
+.chart-tab:hover{color:var(--text);}
+
+.chart-area{position:relative;height:280px;}
+canvas{width:100%!important;height:100%!important;}
+
+/* ── ENTRY FORM ── */
+.form-panel{background:var(--panel);border:1px solid var(--border);padding:22px;}
+.form-title{font-family:'Noto Serif JP',serif;font-size:13px;letter-spacing:2px;margin-bottom:18px;}
+.form-grid{display:flex;flex-direction:column;gap:12px;}
+.form-row{display:flex;flex-direction:column;gap:4px;}
+.form-label{font-size:9px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;}
+.form-input, .form-select{
+  background:var(--panel2);border:1px solid var(--border2);
+  color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;
+  padding:9px 12px;outline:none;width:100%;
+  transition:border-color 0.2s;
+}
+.form-input:focus,.form-select:focus{border-color:var(--gold);}
+.form-select option{background:var(--panel2);}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn-submit{
+  width:100%;padding:12px;margin-top:4px;
+  background:linear-gradient(135deg,rgba(212,168,67,0.2),rgba(212,168,67,0.08));
+  border:1px solid var(--gold);color:var(--gold);
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:3px;
+  text-transform:uppercase;cursor:pointer;transition:all 0.2s;
+}
+.btn-submit:hover{background:rgba(212,168,67,0.25);}
+.form-note{font-size:9px;color:var(--text-muted);text-align:center;margin-top:4px;}
+
+/* ── LOG TABLE ── */
+.log-panel{background:var(--panel);border:1px solid var(--border);padding:22px;}
+.log-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.log-title{font-family:'Noto Serif JP',serif;font-size:13px;letter-spacing:2px;}
+.log-count{font-size:9px;color:var(--text-muted);letter-spacing:2px;}
+table{width:100%;border-collapse:collapse;}
+thead th{
+  font-size:8px;letter-spacing:3px;color:var(--text-muted);
+  text-transform:uppercase;padding:8px 10px;
+  border-bottom:1px solid var(--border2);text-align:left;
+}
+tbody tr{cursor:pointer;transition:background 0.15s;}
+tbody tr:hover{background:rgba(212,168,67,0.04);}
+tbody td{font-size:11px;padding:10px;border-bottom:1px solid rgba(30,42,54,0.6);}
+.td-month{color:var(--gold);letter-spacing:1px;}
+.td-pnl.pos{color:var(--green);}
+.td-pnl.neg{color:var(--red);}
+.td-rate.high{color:var(--green);}
+.td-rate.mid{color:var(--gold);}
+.td-rate.low{color:var(--red);}
+.td-status span{font-size:8px;padding:2px 7px;border:1px solid;letter-spacing:1px;}
+.status-ok{color:var(--green);border-color:var(--green);background:rgba(78,207,137,0.06);}
+.status-near{color:var(--gold);border-color:var(--gold);background:rgba(212,168,67,0.06);}
+.status-ng{color:var(--red);border-color:var(--red);background:rgba(224,92,92,0.06);}
+.del-btn{
+  background:transparent;border:none;color:var(--text-muted);
+  cursor:pointer;font-size:12px;padding:2px 6px;
+  transition:color 0.2s;
+}
+.del-btn:hover{color:var(--red);}
+
+/* ── STREAK ── */
+.streak-row{
+  display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+  margin-top:6px;
+}
+.streak-dot{
+  width:28px;height:28px;border-radius:4px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:8px;letter-spacing:0;border:1px solid var(--border2);
+  color:var(--text-muted);position:relative;cursor:default;
+}
+.streak-dot.win{background:rgba(78,207,137,0.15);border-color:var(--green);color:var(--green);}
+.streak-dot.loss{background:rgba(224,92,92,0.08);border-color:var(--red);color:var(--red);}
+.streak-dot.near{background:rgba(212,168,67,0.08);border-color:var(--gold);color:var(--gold);}
+
+/* ── GOAL TRACKER ── */
+.goal-row{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 0;border-bottom:1px solid rgba(30,42,54,0.5);
+}
+.goal-row:last-child{border-bottom:none;}
+.goal-year{font-size:11px;color:var(--gold);width:40px;flex-shrink:0;}
+.goal-bar-wrap{flex:1;height:6px;background:var(--border2);border-radius:2px;overflow:hidden;}
+.goal-bar{height:100%;border-radius:2px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1);}
+.goal-bar.on-track{background:linear-gradient(90deg,var(--teal),var(--green));}
+.goal-bar.off-track{background:linear-gradient(90deg,var(--red),rgba(224,92,92,0.5));}
+.goal-bar.partial{background:linear-gradient(90deg,var(--gold),var(--gold2));}
+.goal-amount{font-size:11px;width:100px;text-align:right;flex-shrink:0;}
+.goal-pct{font-size:10px;color:var(--text-muted);width:40px;text-align:right;flex-shrink:0;}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:28px;right:28px;
+  background:var(--panel2);border:1px solid var(--gold);
+  color:var(--gold);padding:12px 20px;
+  font-size:11px;letter-spacing:2px;
+  transform:translateY(60px);opacity:0;
+  transition:all 0.3s;pointer-events:none;z-index:100;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .main-grid{grid-template-columns:1fr;}
+  .kpi-bar{grid-template-columns:repeat(3,1fr);}
+  .header-title{font-size:48px;}
+}
+@media(max-width:600px){
+  .kpi-bar{grid-template-columns:1fr 1fr;}
+}
+
+/* ── EMPTY STATE ── */
+.empty-state{
+  text-align:center;padding:40px 20px;
+  color:var(--text-muted);font-size:11px;letter-spacing:2px;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-eyebrow">FX Monthly Performance Tracker</div>
+    <div class="header-title">GOLD / USD</div>
+    <div class="header-sub">FIRE連動 ── 月次損益管理 ── 目標: 月300,000円 / 年3,600,000円</div>
+    <div class="fire-badge" id="fireScenarioBadge">FIRE SCENARIO: 計算中...</div>
+  </div>
+
+  <!-- KPI BAR -->
+  <div class="kpi-bar">
+    <div class="kpi">
+      <div class="kpi-label">今月損益</div>
+      <div class="kpi-val c-gold" id="kpiThisMonth">― <span class="unit">円</span></div>
+      <div class="kpi-note" id="kpiThisMonthNote">未入力</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">年間累計</div>
+      <div class="kpi-val c-gold" id="kpiYearTotal">― <span class="unit">円</span></div>
+      <div class="kpi-note" id="kpiYearNote">目標 360万円</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">年間達成率</div>
+      <div class="kpi-val c-teal" id="kpiYearRate">― <span class="unit">%</span></div>
+      <div class="kpi-note" id="kpiYearRateNote">経過月数ベース</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">月30万 連続達成</div>
+      <div class="kpi-val c-green" id="kpiStreak">― <span class="unit">ヶ月</span></div>
+      <div class="kpi-note">3ヶ月連続→楽観シフト</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">通算勝率</div>
+      <div class="kpi-val c-gold" id="kpiWinRate">― <span class="unit">%</span></div>
+      <div class="kpi-note" id="kpiWinRateNote">全月平均</div>
+    </div>
+  </div>
+
+  <!-- FIRE STATUS BAR -->
+  <div class="fire-status">
+    <div class="fire-dot" id="fireDot"></div>
+    <div>
+      <div class="fire-status-label">FIREシナリオ</div>
+      <div class="fire-status-val" id="fireScenarioText">―</div>
+    </div>
+    <div class="fire-divider"></div>
+    <div>
+      <div class="fire-status-label">月30万達成率（直近3ヶ月）</div>
+      <div class="fire-status-val" id="fireRecentText">―</div>
+    </div>
+    <div class="fire-divider"></div>
+    <div class="fire-progress-wrap">
+      <div class="fire-progress-label">年間目標進捗 (360万円)</div>
+      <div class="fire-progress-track">
+        <div class="fire-progress-fill" id="yearProgressBar" style="width:0%"></div>
+      </div>
+    </div>
+    <div>
+      <div class="fire-status-label">判定更新</div>
+      <div class="fire-status-val" id="fireUpdateText" style="font-size:11px">毎月自動</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- CHART PANEL -->
+    <div class="chart-panel">
+      <div class="chart-header">
+        <div class="chart-title">損益推移</div>
+        <div class="chart-tabs">
+          <button class="chart-tab active" onclick="switchChart('monthly')" id="tab-monthly">月次</button>
+          <button class="chart-tab" onclick="switchChart('cumulative')" id="tab-cumulative">累計</button>
+          <button class="chart-tab" onclick="switchChart('winrate')" id="tab-winrate">勝率</button>
+        </div>
+      </div>
+      <div class="chart-area">
+        <canvas id="mainChart"></canvas>
+      </div>
+    </div>
+
+    <!-- ENTRY FORM -->
+    <div class="form-panel">
+      <div class="form-title">月次データ入力</div>
+      <div class="form-grid">
+        <div class="form-row">
+          <div class="form-label">対象月</div>
+          <input type="month" class="form-input" id="inputMonth" />
+        </div>
+        <div class="form-row">
+          <div class="form-label">月間損益（円）</div>
+          <input type="number" class="form-input" id="inputPnl" placeholder="例: 312000 または -45000" />
+        </div>
+        <div class="form-row-2">
+          <div class="form-row">
+            <div class="form-label">トレード回数</div>
+            <input type="number" class="form-input" id="inputTrades" placeholder="例: 22" min="0" />
+          </div>
+          <div class="form-row">
+            <div class="form-label">勝率（%）</div>
+            <input type="number" class="form-input" id="inputWinRate" placeholder="例: 62" min="0" max="100" step="0.1" />
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-row">
+            <div class="form-label">最大ドローダウン（円）</div>
+            <input type="number" class="form-input" id="inputDD" placeholder="例: 85000" min="0" />
+          </div>
+          <div class="form-row">
+            <div class="form-label">証拠金残高（円）</div>
+            <input type="number" class="form-input" id="inputBalance" placeholder="例: 2500000" min="0" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-label">メモ</div>
+          <input type="text" class="form-input" id="inputMemo" placeholder="相場環境・トレード所感など" />
+        </div>
+        <button class="btn-submit" onclick="saveEntry()">▶ 記録する</button>
+        <div class="form-note">既存月のデータは上書きされます</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STREAK VISUALIZATION -->
+  <div class="log-panel" style="margin-bottom:20px;">
+    <div class="log-header">
+      <div class="log-title">月別達成状況</div>
+      <div class="log-count" id="streakLabel">緑=達成(30万+) 金=接近(20〜30万) 赤=未達</div>
+    </div>
+    <div class="streak-row" id="streakRow">
+      <div class="empty-state" style="padding:16px;">データなし</div>
+    </div>
+  </div>
+
+  <!-- GOAL TRACKER -->
+  <div class="log-panel" style="margin-bottom:20px;">
+    <div class="log-header">
+      <div class="log-title">年間目標トラッカー</div>
+      <div class="log-count">目標 360万円/年</div>
+    </div>
+    <div id="goalTracker"></div>
+  </div>
+
+  <!-- LOG TABLE -->
+  <div class="log-panel">
+    <div class="log-header">
+      <div class="log-title">月次ログ</div>
+      <div class="log-count" id="logCount">0件</div>
+    </div>
+    <div id="tableWrap">
+      <div class="empty-state">まだデータがありません。上のフォームから入力してください。</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ────────────────────────────────────────────
+// DATA LAYER
+// ────────────────────────────────────────────
+const STORAGE_KEY = 'fx_tracker_v1';
+const TARGET_MONTHLY = 300000;
+const TARGET_ANNUAL  = 3600000;
+
+function loadData() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  } catch(e) { return {}; }
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function saveEntry() {
+  const month    = document.getElementById('inputMonth').value;
+  const pnl      = parseInt(document.getElementById('inputPnl').value) || 0;
+  const trades   = parseInt(document.getElementById('inputTrades').value) || 0;
+  const winRate  = parseFloat(document.getElementById('inputWinRate').value) || 0;
+  const dd       = parseInt(document.getElementById('inputDD').value) || 0;
+  const balance  = parseInt(document.getElementById('inputBalance').value) || 0;
+  const memo     = document.getElementById('inputMemo').value.trim();
+
+  if (!month) { showToast('月を選択してください'); return; }
+  if (document.getElementById('inputPnl').value === '') { showToast('損益を入力してください'); return; }
+
+  const data = loadData();
+  data[month] = { pnl, trades, winRate, dd, balance, memo, saved: new Date().toISOString() };
+  saveData(data);
+
+  // Clear inputs (keep month for convenience)
+  ['inputPnl','inputTrades','inputWinRate','inputDD','inputBalance','inputMemo'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+
+  showToast('✓ 記録しました: ' + month);
+  render();
+}
+
+function deleteEntry(month) {
+  if (!confirm(month + ' のデータを削除しますか？')) return;
+  const data = loadData();
+  delete data[month];
+  saveData(data);
+  render();
+}
+
+// ────────────────────────────────────────────
+// HELPERS
+// ────────────────────────────────────────────
+function fmt(n) {
+  if (n === null || n === undefined) return '―';
+  const abs = Math.abs(n);
+  if (abs >= 10000) return (n < 0 ? '-' : '') + Math.round(abs/10000*10)/10 + '万';
+  return n.toLocaleString('ja-JP');
+}
+
+function fmtFull(n) {
+  if (n === null || n === undefined) return '―';
+  return (n >= 0 ? '+' : '') + n.toLocaleString('ja-JP') + '円';
+}
+
+function getYear(month) { return month.split('-')[0]; }
+function getMonth(month) { return month.split('-')[1]; }
+
+function getSortedEntries(data) {
+  return Object.entries(data).sort((a,b) => a[0].localeCompare(b[0]));
+}
+
+function getCurrentYear() { return new Date().toISOString().slice(0,4); }
+function getCurrentMonth() { return new Date().toISOString().slice(0,7); }
+
+// ────────────────────────────────────────────
+// CHART
+// ────────────────────────────────────────────
+let chartInstance = null;
+let currentChartMode = 'monthly';
+
+function switchChart(mode) {
+  currentChartMode = mode;
+  ['monthly','cumulative','winrate'].forEach(m => {
+    document.getElementById('tab-' + m).classList.toggle('active', m === mode);
+  });
+  drawChart(loadData());
+}
+
+function drawChart(data) {
+  const entries = getSortedEntries(data);
+  if (!entries.length) {
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+    return;
+  }
+
+  const labels = entries.map(([m]) => m.replace('-', '.'));
+  let datasets = [];
+  const gold = '#d4a843', teal = '#3ec9c0', red = '#e05c5c', green = '#4ecf89';
+
+  if (currentChartMode === 'monthly') {
+    const pnls = entries.map(([,e]) => e.pnl);
+    datasets = [{
+      type: 'bar',
+      label: '月間損益',
+      data: pnls,
+      backgroundColor: pnls.map(v => v >= TARGET_MONTHLY ? 'rgba(78,207,137,0.5)' : v >= 0 ? 'rgba(212,168,67,0.45)' : 'rgba(224,92,92,0.4)'),
+      borderColor: pnls.map(v => v >= TARGET_MONTHLY ? green : v >= 0 ? gold : red),
+      borderWidth: 1,
+      borderRadius: 2,
+    }, {
+      type: 'line',
+      label: '目標(30万)',
+      data: entries.map(() => TARGET_MONTHLY),
+      borderColor: 'rgba(212,168,67,0.3)',
+      borderDash: [6,4],
+      borderWidth: 1,
+      pointRadius: 0,
+      fill: false,
+    }];
+  } else if (currentChartMode === 'cumulative') {
+    let cum = 0;
+    const cumData = entries.map(([,e]) => { cum += e.pnl; return cum; });
+    let cumTarget = 0;
+    const targetData = entries.map(([m]) => {
+      const y = getYear(m), mo = parseInt(getMonth(m));
+      return TARGET_MONTHLY * mo;
+    });
+    datasets = [{
+      type: 'line',
+      label: '累計損益',
+      data: cumData,
+      borderColor: teal,
+      backgroundColor: 'rgba(62,201,192,0.06)',
+      borderWidth: 2,
+      pointRadius: 4,
+      pointBackgroundColor: teal,
+      fill: true,
+      tension: 0.3,
+    }, {
+      type: 'line',
+      label: '目標ライン',
+      data: targetData,
+      borderColor: 'rgba(212,168,67,0.35)',
+      borderDash: [6,4],
+      borderWidth: 1,
+      pointRadius: 0,
+      fill: false,
+    }];
+  } else {
+    const rates = entries.map(([,e]) => e.winRate || 0);
+    datasets = [{
+      type: 'bar',
+      label: '月次勝率(%)',
+      data: rates,
+      backgroundColor: rates.map(v => v >= 60 ? 'rgba(78,207,137,0.45)' : v >= 50 ? 'rgba(212,168,67,0.45)' : 'rgba(224,92,92,0.4)'),
+      borderColor: rates.map(v => v >= 60 ? green : v >= 50 ? gold : red),
+      borderWidth: 1,
+      borderRadius: 2,
+    }, {
+      type: 'line',
+      label: '目標勝率(60%)',
+      data: entries.map(() => 60),
+      borderColor: 'rgba(78,207,137,0.3)',
+      borderDash: [6,4],
+      borderWidth: 1,
+      pointRadius: 0,
+      fill: false,
+    }];
+  }
+
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0d1218',
+          borderColor: '#1e2a36',
+          borderWidth: 1,
+          titleColor: '#d4a843',
+          bodyColor: '#d8e0e8',
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.y;
+              if (currentChartMode === 'winrate') return ' 勝率: ' + v.toFixed(1) + '%';
+              return ' ' + (v >= 0 ? '+' : '') + v.toLocaleString('ja-JP') + '円';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(30,42,54,0.6)' },
+          ticks: { color: '#384858', font: { family: 'JetBrains Mono', size: 10 } }
+        },
+        y: {
+          grid: { color: 'rgba(30,42,54,0.6)' },
+          ticks: {
+            color: '#384858',
+            font: { family: 'JetBrains Mono', size: 10 },
+            callback: v => currentChartMode === 'winrate' ? v + '%' : (Math.abs(v) >= 10000 ? (v/10000).toFixed(0) + '万' : v)
+          }
+        }
+      }
+    }
+  });
+}
+
+// ────────────────────────────────────────────
+// RENDER
+// ────────────────────────────────────────────
+function render() {
+  const data = loadData();
+  const entries = getSortedEntries(data);
+  const year = getCurrentYear();
+  const thisMonth = getCurrentMonth();
+  const yearEntries = entries.filter(([m]) => getYear(m) === year);
+
+  // ── KPIs ──
+  const thisEntry = data[thisMonth];
+  const kpiThisMonth = document.getElementById('kpiThisMonth');
+  const kpiNote = document.getElementById('kpiThisMonthNote');
+  if (thisEntry) {
+    const pnl = thisEntry.pnl;
+    kpiThisMonth.className = 'kpi-val ' + (pnl >= 0 ? 'c-green' : 'c-red');
+    kpiThisMonth.innerHTML = fmt(pnl) + ' <span class="unit">円</span>';
+    kpiNote.textContent = pnl >= TARGET_MONTHLY ? '✓ 目標達成' : pnl >= 0 ? '▲ 目標まで ' + fmt(TARGET_MONTHLY - pnl) + '円' : '✗ 損失';
+  } else {
+    kpiThisMonth.className = 'kpi-val c-gold';
+    kpiThisMonth.innerHTML = '― <span class="unit">円</span>';
+    kpiNote.textContent = thisMonth + ' 未入力';
+  }
+
+  const yearTotal = yearEntries.reduce((s,[,e]) => s + e.pnl, 0);
+  const yearRate  = yearTotal / TARGET_ANNUAL * 100;
+  const passedMonths = parseInt(getCurrentMonth().split('-')[1]);
+  const expectedByNow = TARGET_MONTHLY * passedMonths;
+  const onTrack = yearTotal >= expectedByNow * 0.8;
+
+  document.getElementById('kpiYearTotal').innerHTML = fmt(yearTotal) + ' <span class="unit">円</span>';
+  document.getElementById('kpiYearTotal').className = 'kpi-val ' + (yearTotal >= 0 ? 'c-gold' : 'c-red');
+  document.getElementById('kpiYearNote').textContent = '目標比 ' + yearRate.toFixed(1) + '%';
+  document.getElementById('kpiYearRate').innerHTML = yearRate.toFixed(1) + ' <span class="unit">%</span>';
+  document.getElementById('kpiYearRate').className = 'kpi-val ' + (yearRate >= 100 ? 'c-green' : yearRate >= 70 ? 'c-teal' : 'c-red');
+  document.getElementById('kpiYearRateNote').textContent = onTrack ? '✓ 進捗良好' : '▲ ペース不足';
+
+  // Streak
+  let streak = 0;
+  for (let i = entries.length - 1; i >= 0; i--) {
+    if (entries[i][1].pnl >= TARGET_MONTHLY) streak++;
+    else break;
+  }
+  document.getElementById('kpiStreak').innerHTML = streak + ' <span class="unit">ヶ月</span>';
+  document.getElementById('kpiStreak').className = 'kpi-val ' + (streak >= 3 ? 'c-green' : streak >= 1 ? 'c-gold' : 'c-red');
+
+  // Win rate
+  const withWR = entries.filter(([,e]) => e.winRate > 0);
+  if (withWR.length) {
+    const avg = withWR.reduce((s,[,e]) => s + e.winRate, 0) / withWR.length;
+    document.getElementById('kpiWinRate').innerHTML = avg.toFixed(1) + ' <span class="unit">%</span>';
+    document.getElementById('kpiWinRate').className = 'kpi-val ' + (avg >= 60 ? 'c-green' : avg >= 50 ? 'c-gold' : 'c-red');
+    document.getElementById('kpiWinRateNote').textContent = withWR.length + 'ヶ月分の平均';
+  }
+
+  // ── FIRE STATUS ──
+  const recent3 = entries.slice(-3).filter(([,e]) => e.pnl >= TARGET_MONTHLY).length;
+  const recent3Total = entries.slice(-3).length;
+  let scenario, scenarioColor, dotClass;
+  if (streak >= 3) {
+    scenario = '楽観シナリオ — 2031年 FIRE 射程圏内';
+    scenarioColor = '#4ecf89'; dotClass = 'optimistic';
+  } else if (streak >= 1 || (recent3Total >= 2 && recent3 >= 1)) {
+    scenario = '標準シナリオ — 2033年 FIRE';
+    scenarioColor = '#d4a843'; dotClass = 'standard';
+  } else {
+    scenario = '保守シナリオ — 2035年以降';
+    scenarioColor = '#e05c5c'; dotClass = 'conservative';
+  }
+  document.getElementById('fireDot').className = 'fire-dot ' + dotClass;
+  document.getElementById('fireScenarioText').textContent = scenario;
+  document.getElementById('fireScenarioText').style.color = scenarioColor;
+  document.getElementById('fireRecentText').textContent = recent3 + '/' + recent3Total + 'ヶ月 達成';
+  document.getElementById('fireRecentText').style.color = scenarioColor;
+
+  const prog = Math.min(yearRate, 100);
+  const bar = document.getElementById('yearProgressBar');
+  bar.style.width = prog + '%';
+  bar.style.background = prog >= 100 ? '#4ecf89' : prog >= 70 ? 'linear-gradient(90deg,#3ec9c0,#4ecf89)' : prog >= 40 ? 'linear-gradient(90deg,#d4a843,#f0c866)' : 'linear-gradient(90deg,#e05c5c,rgba(224,92,92,0.5))';
+
+  document.getElementById('fireScenarioBadge').textContent = 'FIRE SCENARIO: ' + scenario;
+  document.getElementById('fireScenarioBadge').style.borderColor = scenarioColor;
+  document.getElementById('fireScenarioBadge').style.color = scenarioColor;
+
+  // ── STREAK DOTS ──
+  const streakRow = document.getElementById('streakRow');
+  if (!entries.length) {
+    streakRow.innerHTML = '<div class="empty-state" style="padding:16px;">データなし</div>';
+  } else {
+    streakRow.innerHTML = entries.map(([m, e]) => {
+      const pnl = e.pnl;
+      const cls = pnl >= TARGET_MONTHLY ? 'win' : pnl >= 200000 ? 'near' : 'loss';
+      const mo = getMonth(m);
+      const yr = getYear(m);
+      const tooltip = yr + '/' + mo + ': ' + (pnl >= 0 ? '+' : '') + pnl.toLocaleString('ja-JP') + '円';
+      return `<div class="streak-dot ${cls}" title="${tooltip}">${yr.slice(2)}.${mo}</div>`;
+    }).join('');
+  }
+
+  // ── GOAL TRACKER ──
+  const years = [...new Set(entries.map(([m]) => getYear(m)))];
+  const goalDiv = document.getElementById('goalTracker');
+  if (!years.length) {
+    goalDiv.innerHTML = '<div class="empty-state">データなし</div>';
+  } else {
+    goalDiv.innerHTML = years.map(y => {
+      const yEntries = entries.filter(([m]) => getYear(m) === y);
+      const total = yEntries.reduce((s,[,e]) => s + e.pnl, 0);
+      const pct = Math.min(total / TARGET_ANNUAL * 100, 100);
+      const cls = pct >= 100 ? 'on-track' : pct >= 60 ? 'partial' : 'off-track';
+      const color = pct >= 100 ? '#4ecf89' : pct >= 60 ? '#d4a843' : '#e05c5c';
+      return `
+        <div class="goal-row">
+          <div class="goal-year">${y}</div>
+          <div class="goal-bar-wrap"><div class="goal-bar ${cls}" style="width:${pct}%"></div></div>
+          <div class="goal-amount" style="color:${color}">${fmt(total)}円</div>
+          <div class="goal-pct" style="color:${color}">${pct.toFixed(0)}%</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── TABLE ──
+  const tableWrap = document.getElementById('tableWrap');
+  document.getElementById('logCount').textContent = entries.length + '件';
+  if (!entries.length) {
+    tableWrap.innerHTML = '<div class="empty-state">まだデータがありません。上のフォームから入力してください。</div>';
+  } else {
+    const rows = [...entries].reverse().map(([m, e]) => {
+      const pnl = e.pnl;
+      const pnlCls = pnl >= 0 ? 'pos' : 'neg';
+      const wr = e.winRate;
+      const wrCls = wr >= 60 ? 'high' : wr >= 50 ? 'mid' : 'low';
+      const statusCls = pnl >= TARGET_MONTHLY ? 'status-ok' : pnl >= 200000 ? 'status-near' : 'status-ng';
+      const statusTxt = pnl >= TARGET_MONTHLY ? '達成' : pnl >= 0 ? '接近' : '未達';
+      const ddText = e.dd ? fmt(e.dd) + '円' : '―';
+      const balText = e.balance ? fmt(e.balance) + '円' : '―';
+      return `<tr>
+        <td class="td-month">${m}</td>
+        <td class="td-pnl ${pnlCls}">${pnl >= 0 ? '+' : ''}${pnl.toLocaleString('ja-JP')}</td>
+        <td>${e.trades || '―'}</td>
+        <td class="td-rate ${wrCls}">${wr ? wr.toFixed(1) + '%' : '―'}</td>
+        <td>${ddText}</td>
+        <td>${balText}</td>
+        <td class="td-status"><span class="${statusCls}">${statusTxt}</span></td>
+        <td style="font-size:10px;color:var(--text-muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.memo || ''}</td>
+        <td><button class="del-btn" onclick="deleteEntry('${m}')">✕</button></td>
+      </tr>`;
+    }).join('');
+
+    tableWrap.innerHTML = `<table>
+      <thead><tr>
+        <th>月</th><th>損益（円）</th><th>取引数</th><th>勝率</th><th>最大DD</th><th>証拠金</th><th>状態</th><th>メモ</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+
+  // ── CHART ──
+  drawChart(data);
+}
+
+// ────────────────────────────────────────────
+// TOAST
+// ────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ────────────────────────────────────────────
+// INIT
+// ────────────────────────────────────────────
+// Set default month to current
+document.getElementById('inputMonth').value = getCurrentMonth();
+
+// Load Chart.js
+const script = document.createElement('script');
+script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+script.onload = () => render();
+script.onerror = () => {
+  console.error('Chart.js load failed');
+  render(); // render without chart
+};
+document.head.appendChild(script);
+
+// Enter key on form
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.closest('.form-panel')) saveEntry();
+});
+</script>
+</body>
+</html>
