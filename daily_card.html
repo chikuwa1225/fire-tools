@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>FIRE今日のカード</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;700&family=Noto+Serif+JP:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #04090e;
+  --card: #0c1822;
+  --card2: #101f2e;
+  --br: #162438;
+  --fire: #ff5722;
+  --fire2: #ff8a50;
+  --gold: #ffb300;
+  --gold2: #ffd54f;
+  --green: #00e676;
+  --green2: #69f0ae;
+  --teal: #00bcd4;
+  --text: #e8f4f8;
+  --t2: #7a9db8;
+  --t3: #3a5a78;
+  --done-green: #00c853;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Serif JP', serif;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  background-image:
+    radial-gradient(ellipse 100% 50% at 50% 0%, rgba(255,87,34,0.08) 0%, transparent 60%);
+}
+
+/* ── MAIN WRAPPER ── */
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── HEADER ── */
+.header {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+.fire-count {
+  font-family: 'Oswald', sans-serif;
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--fire2), var(--fire), #c62828);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -2px;
+}
+.fire-count-label {
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--t3);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.date-label {
+  font-size: 12px;
+  color: var(--t2);
+  margin-top: 6px;
+  letter-spacing: 1px;
+}
+
+/* ── PROGRESS BAR ── */
+.progress-wrap {
+  padding: 0 4px;
+}
+.progress-track {
+  height: 3px;
+  background: var(--br);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--fire));
+  transition: width 0.6s cubic-bezier(.4,0,.2,1);
+}
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 10px;
+  color: var(--t3);
+  font-family: 'Oswald', sans-serif;
+  letter-spacing: 1px;
+}
+
+/* ── SECTION LABEL ── */
+.section-label {
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: var(--t3);
+  text-transform: uppercase;
+  padding-left: 2px;
+}
+
+/* ── TASK CARDS ── */
+.tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task-card {
+  background: var(--card);
+  border: 1px solid var(--br);
+  border-radius: 2px;
+  padding: 18px 18px 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, background 0.2s;
+  -webkit-user-select: none;
+  user-select: none;
+  min-height: 72px;
+}
+
+.task-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--t3);
+  transition: background 0.3s;
+}
+
+.task-card.done::before { background: var(--done-green); }
+.task-card.done { background: rgba(0,200,83,0.04); border-color: rgba(0,200,83,0.15); }
+
+/* Ripple effect */
+.task-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.04);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.task-card:active::after { opacity: 1; }
+
+.task-check {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--br);
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(.4,0,.2,1);
+  position: relative;
+}
+.task-card.done .task-check {
+  background: var(--done-green);
+  border-color: var(--done-green);
+  transform: scale(1.1);
+}
+.check-icon {
+  font-size: 14px;
+  color: #000;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.2s cubic-bezier(.4,0,.2,1);
+}
+.task-card.done .check-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.task-body { flex: 1; }
+.task-title {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--text);
+  transition: color 0.2s;
+}
+.task-card.done .task-title { color: var(--t2); }
+.task-sub {
+  font-size: 11px;
+  color: var(--t3);
+  margin-top: 3px;
+  letter-spacing: 0.5px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 300;
+}
+
+.task-tag {
+  font-size: 9px;
+  padding: 2px 8px;
+  border: 1px solid;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 300;
+}
+.tag-fx    { color: var(--gold);  border-color: rgba(255,179,0,0.4);   }
+.tag-fire  { color: var(--fire2); border-color: rgba(255,87,34,0.4);   }
+.tag-invest{ color: var(--teal);  border-color: rgba(0,188,212,0.4);   }
+.tag-check { color: var(--green); border-color: rgba(0,230,118,0.4);   }
+
+/* ── ALL DONE STATE ── */
+.all-done {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  gap: 16px;
+}
+.all-done.show { display: flex; }
+.done-emoji {
+  font-size: 64px;
+  animation: bounce 0.6s cubic-bezier(.4,0,.2,1);
+}
+.done-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--done-green);
+  letter-spacing: 2px;
+}
+.done-sub { font-size: 13px; color: var(--t2); line-height: 1.8; }
+.done-fire-msg {
+  font-size: 12px;
+  color: var(--t3);
+  border: 1px solid var(--br);
+  padding: 12px 20px;
+  letter-spacing: 1px;
+}
+@keyframes bounce {
+  0%   { transform: scale(0); }
+  60%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* ── MONTHLY INPUT ── */
+.monthly-section {
+  background: var(--card);
+  border: 1px solid var(--br);
+  border-left: 3px solid var(--gold);
+  padding: 16px;
+  display: none;
+}
+.monthly-section.show { display: block; }
+.monthly-title {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.monthly-inp-wrap {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.monthly-inp {
+  flex: 1;
+  background: var(--card2);
+  border: 1px solid var(--br);
+  color: var(--text);
+  font-family: 'Oswald', sans-serif;
+  font-size: 20px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+.monthly-inp:focus { border-color: var(--gold); }
+.monthly-inp::placeholder { color: var(--t3); font-size: 14px; }
+.monthly-unit { font-size: 12px; color: var(--t2); white-space: nowrap; }
+.monthly-save {
+  padding: 10px 18px;
+  background: transparent;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.monthly-save:active { background: rgba(255,179,0,0.15); }
+.monthly-result {
+  margin-top: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  border: 1px solid;
+  display: none;
+  line-height: 1.6;
+}
+.monthly-result.ok   { border-color: rgba(0,230,118,0.4); color: var(--green2); display: block; }
+.monthly-result.warn { border-color: rgba(255,179,0,0.4); color: var(--gold2); display: block; }
+.monthly-result.bad  { border-color: rgba(255,87,34,0.4); color: var(--fire2); display: block; }
+
+/* ── STREAK ── */
+.streak-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--br);
+}
+.streak-dots {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.sdot {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.sdot.l0 { background: var(--br); }
+.sdot.l1 { background: rgba(255,179,0,0.3); }
+.sdot.l2 { background: rgba(255,179,0,0.6); }
+.sdot.l3 { background: var(--gold); }
+.sdot.l4 { background: var(--fire); }
+.streak-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  color: var(--fire2);
+  white-space: nowrap;
+  letter-spacing: 1px;
+}
+
+/* ── NAV LINKS ── */
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+.nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--card);
+  border: 1px solid var(--br);
+  color: var(--t2);
+  font-size: 12px;
+  text-decoration: none;
+  letter-spacing: 1px;
+  transition: border-color 0.2s, color 0.2s;
+}
+.nav-link:active { border-color: var(--t2); color: var(--text); }
+.nav-link-arrow { font-size: 16px; color: var(--t3); }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: var(--card2);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  padding: 10px 24px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+  z-index: 100;
+  white-space: nowrap;
+}
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.task-card {
+  animation: fadeUp 0.4s ease both;
+}
+.task-card:nth-child(1) { animation-delay: 0.05s; }
+.task-card:nth-child(2) { animation-delay: 0.10s; }
+.task-card:nth-child(3) { animation-delay: 0.15s; }
+.task-card:nth-child(4) { animation-delay: 0.20s; }
+.task-card:nth-child(5) { animation-delay: 0.25s; }
+
+/* ── CHECK ANIMATION ── */
+@keyframes checkPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(0.92); }
+  70%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.task-card.just-done {
+  animation: checkPop 0.35s cubic-bezier(.4,0,.2,1);
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="fire-count" id="fireCd">―</div>
+    <div class="fire-count-label">DAYS TO FIRE</div>
+    <div class="date-label" id="dateLabel"></div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-wrap">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-meta">
+      <span id="progressLeft">今日: 0/0 完了</span>
+      <span id="streakChip">連続 0日</span>
+    </div>
+  </div>
+
+  <!-- MONTHLY INPUT (月末のみ表示) -->
+  <div class="monthly-section" id="monthlySection">
+    <div class="monthly-title">⚡ 今月のFX損益を入力 — 月次チェック</div>
+    <div class="monthly-inp-wrap">
+      <input type="number" class="monthly-inp" id="monthlyInp" placeholder="例: 245000" inputmode="numeric" />
+      <div class="monthly-unit">円</div>
+      <button class="monthly-save" onclick="saveMonthly()">保存</button>
+    </div>
+    <div class="monthly-result" id="monthlyResult"></div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="section-label" id="taskSectionLabel">今日やること</div>
+  <div class="tasks" id="taskList"></div>
+
+  <!-- ALL DONE -->
+  <div class="all-done" id="allDone">
+    <div class="done-emoji">🔥</div>
+    <div class="done-title">今日は完了！</div>
+    <div class="done-sub">お疲れ様でした、とおるさん。<br>また明日もここを開いてください。</div>
+    <div class="done-fire-msg" id="doneFire"></div>
+  </div>
+
+  <!-- STREAK -->
+  <div class="streak-row">
+    <div class="streak-dots" id="streakDots"></div>
+    <div class="streak-label" id="streakLabel">0日連続</div>
+  </div>
+
+  <!-- NAV -->
+  <div class="section-label">ツール一覧</div>
+  <div class="nav-links">
+    <a class="nav-link" href="https://chikuwa1225.github.io/fire-tools/fx_tracker.html">
+      <span>FXトラッカー</span><span class="nav-link-arrow">›</span>
+    </a>
+    <a class="nav-link" href="https://chikuwa1225.github.io/fire-tools/asset_simulator.html">
+      <span>資産推移シミュレーター</span><span class="nav-link-arrow">›</span>
+    </a>
+    <a class="nav-link" href="https://chikuwa1225.github.io/fire-tools/education_simulator_v2.html">
+      <span>教育費シミュレーター</span><span class="nav-link-arrow">›</span>
+    </a>
+    <a class="nav-link" href="https://chikuwa1225.github.io/fire-tools/fire_cockpit_cloud.html">
+      <span>FIREコックピット（詳細版）</span><span class="nav-link-arrow">›</span>
+    </a>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════
+const FIRE_DATE    = new Date('2033-01-01');
+const TARGET_FX    = 300000;
+const TARGET_ASSET = 12000; // 万円（楽観目標）
+const SK           = 'fire_daily_v2';
+
+function today()     { return new Date().toISOString().slice(0,10); }
+function thisMonth() { return new Date().toISOString().slice(0,7); }
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(SK)) || {}; }
+  catch(e) { return {}; }
+}
+function store(data) { localStorage.setItem(SK, JSON.stringify(data)); }
+
+// ════════════════════════════════════
+// TASK DEFINITIONS — 曜日で変わる
+// ════════════════════════════════════
+const DOW = new Date().getDay(); // 0=日, 1=月...
+
+const DAILY_TASKS = [
+  { id:'t1', title:'FXチャートを確認する', sub:'GOLD/USD 5分足 — 20EMA・200EMAをチェック', tag:'fx' },
+  { id:'t2', title:'資産残高を1秒見る',     sub:'MoneyForward アプリを開くだけでOK',         tag:'fire' },
+  { id:'t3', title:'昨日を1行振り返る',     sub:'良かった・次改善すること — メモ不要',        tag:'check' },
+];
+
+const EXTRA_TASKS = {
+  1: { id:'t4', title:'NISA積立を確認する', sub:'楽天証券 → 今月の積立状況',     tag:'invest' }, // 月
+  1: { id:'t4', title:'今週のFXレビュー準備', sub:'友人との週次レビュー用メモを整理', tag:'fx'  }, // 月（上書き）
+  5: { id:'t4', title:'今週のFXを振り返る',  sub:'良かった点・悪かった点を考える',  tag:'check' }, // 金
+};
+
+function getTodayTasks() {
+  const tasks = [...DAILY_TASKS];
+  if (EXTRA_TASKS[DOW]) tasks.push(EXTRA_TASKS[DOW]);
+  return tasks;
+}
+
+// ════════════════════════════════════
+// STATE
+// ════════════════════════════════════
+function getTodayState() {
+  const data = load();
+  return data[today()] || {};
+}
+function saveTodayState(state) {
+  const data = load();
+  data[today()] = state;
+  // keep 90 days
+  const keys = Object.keys(data).sort().slice(-90);
+  const trimmed = {};
+  keys.forEach(k => trimmed[k] = data[k]);
+  store(trimmed);
+}
+
+// ════════════════════════════════════
+// RENDER
+// ════════════════════════════════════
+function render() {
+  const tasks = getTodayTasks();
+  const state = getTodayState();
+  const done  = tasks.filter(t => state[t.id]).length;
+  const total = tasks.length;
+  const allDone = done === total;
+
+  // Header
+  const now = new Date();
+  const diff = Math.ceil((FIRE_DATE - now) / (1000*60*60*24));
+  document.getElementById('fireCd').textContent = diff.toLocaleString();
+  document.getElementById('dateLabel').textContent =
+    now.toLocaleDateString('ja-JP', {month:'long', day:'numeric', weekday:'short'});
+
+  // Progress
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLeft').textContent = `今日: ${done}/${total} 完了`;
+
+  // Tasks or AllDone
+  const taskList = document.getElementById('taskList');
+  const allDoneEl = document.getElementById('allDone');
+
+  if (allDone) {
+    taskList.style.display = 'none';
+    allDoneEl.classList.add('show');
+    document.getElementById('taskSectionLabel').style.display = 'none';
+    const daysLeft = diff;
+    document.getElementById('doneFire').textContent =
+      `FIREまであと ${daysLeft.toLocaleString()} 日。今日の積み上げが確実に縮めている。`;
+  } else {
+    taskList.style.display = 'flex';
+    allDoneEl.classList.remove('show');
+    document.getElementById('taskSectionLabel').style.display = 'block';
+    taskList.innerHTML = tasks.map(t => {
+      const isDone = !!state[t.id];
+      return `<div class="task-card${isDone?' done':''}" onclick="toggle('${t.id}')" id="card_${t.id}">
+        <div class="task-check">
+          <span class="check-icon">✓</span>
+        </div>
+        <div class="task-body">
+          <div class="task-title">${t.title}</div>
+          <div class="task-sub">${t.sub}</div>
+        </div>
+        <div class="task-tag tag-${t.tag}">${t.tag.toUpperCase()}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Monthly section（月末5日間だけ表示）
+  const dayOfMonth = now.getDate();
+  const lastDay    = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const showMonthly = dayOfMonth >= lastDay - 4;
+  const data = load();
+  const alreadySavedThisMonth = data['monthly_' + thisMonth()];
+  document.getElementById('monthlySection').classList.toggle('show', showMonthly && !alreadySavedThisMonth);
+
+  // Streak
+  renderStreak();
+}
+
+// ════════════════════════════════════
+// TOGGLE TASK
+// ════════════════════════════════════
+function toggle(id) {
+  const state = getTodayState();
+  const prev  = state[id];
+  state[id]   = !prev;
+  saveTodayState(state);
+
+  if (!prev) {
+    // チェックアニメーション
+    const card = document.getElementById('card_' + id);
+    if (card) {
+      card.classList.add('just-done');
+      setTimeout(() => card.classList.remove('just-done'), 400);
+    }
+    // バイブレーション（対応デバイスのみ）
+    if (navigator.vibrate) navigator.vibrate(40);
+  }
+
+  const tasks  = getTodayTasks();
+  const allNow = tasks.every(t => getTodayState()[t.id]);
+
+  if (allNow) {
+    // 全完了 → 少し待ってから完了画面へ
+    setTimeout(() => { render(); showToast('🔥 今日のタスク完了！'); }, 300);
+  } else {
+    render();
+  }
+}
+
+// ════════════════════════════════════
+// MONTHLY FX INPUT
+// ════════════════════════════════════
+function saveMonthly() {
+  const val = parseInt(document.getElementById('monthlyInp').value);
+  if (isNaN(val)) { showToast('金額を入力してください'); return; }
+
+  const data = load();
+  data['monthly_' + thisMonth()] = { pnl: val, saved: new Date().toISOString() };
+  store(data);
+
+  const resultEl = document.getElementById('monthlyResult');
+  const gap = TARGET_FX - val;
+  if (val >= TARGET_FX) {
+    resultEl.className = 'monthly-result ok';
+    resultEl.textContent = `✓ 月30万達成！+${(val/10000).toFixed(1)}万円。楽観シナリオ継続中。`;
+  } else if (val >= 0) {
+    resultEl.className = 'monthly-result warn';
+    resultEl.textContent = `あと${(gap/10000).toFixed(1)}万円で目標。来月リベンジ。`;
+  } else {
+    resultEl.className = 'monthly-result bad';
+    resultEl.textContent = `今月は損失${Math.abs(val/10000).toFixed(1)}万円。週次レビューでルール確認を。`;
+  }
+
+  document.getElementById('monthlySection').classList.remove('show');
+  showToast('月次データを保存しました');
+  render();
+}
+
+// ════════════════════════════════════
+// STREAK CALENDAR (30日分)
+// ════════════════════════════════════
+function renderStreak() {
+  const data  = load();
+  const now   = new Date();
+  const days  = [];
+  for (let i=29; i>=0; i--) {
+    const d = new Date(now); d.setDate(now.getDate()-i);
+    days.push(d.toISOString().slice(0,10));
+  }
+
+  const TASK_TOTAL = DAILY_TASKS.length;
+  let streak = 0;
+  const dots = days.map(d => {
+    const s    = data[d] || {};
+    const done = Object.values(s).filter(Boolean).length;
+    const pct  = TASK_TOTAL ? done/TASK_TOTAL : 0;
+    const lv   = pct === 0 ? 0 : pct < 0.34 ? 1 : pct < 0.67 ? 2 : pct < 1 ? 3 : 4;
+    return { d, lv };
+  });
+
+  // 連続日数（後ろから）
+  for (let i = dots.length-1; i >= 0; i--) {
+    if (dots[i].lv >= 2) streak++;
+    else break;
+  }
+
+  document.getElementById('streakDots').innerHTML =
+    dots.map(({d,lv}) => `<div class="sdot l${lv}" title="${d}"></div>`).join('');
+  document.getElementById('streakLabel').textContent = `${streak}日連続`;
+  document.getElementById('streakChip').textContent  = `連続 ${streak}日`;
+}
+
+// ════════════════════════════════════
+// TOAST
+// ════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ════════════════════════════════════
+// INIT
+// ════════════════════════════════════
+render();
+</script>
+</body>
+</html>
