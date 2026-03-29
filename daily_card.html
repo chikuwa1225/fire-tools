@@ -13,222 +13,177 @@
   --fire:#ff5722; --fire2:#ff8a50;
   --gold:#ffb300; --gold2:#ffd54f;
   --green:#00e676; --green2:#69f0ae;
-  --teal:#00bcd4; --red:#ff5252; --red2:#ff8a80;
+  --teal:#00bcd4;
+  --red:#ff5252; --red2:#ff8a80;
+  --health:#7c4dff; --health2:#b39ddb;
   --text:#e8f4f8; --t2:#7a9db8; --t3:#3a5a78; --t4:#1e3450;
   --done-green:#00c853;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Serif JP',serif;overflow-x:hidden;}
-body{
-  min-height:100vh;min-height:-webkit-fill-available;
-  background-image:radial-gradient(ellipse 100% 50% at 50% 0%,rgba(255,87,34,0.07) 0%,transparent 60%);
-}
-.app{max-width:480px;margin:0 auto;padding:20px 16px 48px;min-height:100vh;display:flex;flex-direction:column;gap:12px;}
+body{min-height:100vh;min-height:-webkit-fill-available;
+  background-image:radial-gradient(ellipse 100% 50% at 50% 0%,rgba(255,87,34,0.07) 0%,transparent 55%);}
+.app{max-width:480px;margin:0 auto;padding:20px 16px 52px;min-height:100vh;display:flex;flex-direction:column;gap:12px;}
 
-/* ── HEADER ── */
-.header{text-align:center;padding:8px 0 2px;}
-.fire-count{
-  font-family:'Oswald',sans-serif;font-size:68px;font-weight:700;line-height:1;
+.header{text-align:center;padding:6px 0 2px;}
+.fire-count{font-family:'Oswald',sans-serif;font-size:66px;font-weight:700;line-height:1;
   background:linear-gradient(135deg,var(--fire2),var(--fire),#c62828);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-2px;
-}
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-2px;}
 .fire-count-label{font-size:10px;letter-spacing:4px;color:var(--t3);text-transform:uppercase;margin-top:2px;}
-.date-label{font-size:12px;color:var(--t2);margin-top:5px;letter-spacing:1px;}
+.date-label{font-size:12px;color:var(--t2);margin-top:4px;letter-spacing:1px;}
 
-/* ── DAILY TASK PROGRESS ── */
 .progress-wrap{padding:0 2px;}
 .progress-track{height:3px;background:var(--br);border-radius:2px;overflow:hidden;}
 .progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold),var(--fire));transition:width .6s cubic-bezier(.4,0,.2,1);}
 .progress-meta{display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--t3);font-family:'Oswald',sans-serif;letter-spacing:1px;}
 
-/* ── KPI CARDS ── */
 .kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.kpi-card{
-  background:var(--card);border:1px solid var(--br);
-  padding:14px 14px 12px;position:relative;overflow:hidden;
-}
+.kpi-card{background:var(--card);border:1px solid var(--br);padding:13px 13px 11px;position:relative;overflow:hidden;}
 .kpi-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
 .kpi-card.asset::before{background:var(--gold);}
-.kpi-card.fx::before   {background:var(--teal);}
-.kpi-label{font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;
-  margin-bottom:7px;font-family:'Oswald',sans-serif;font-weight:300;}
-.kpi-pct{font-family:'Oswald',sans-serif;font-size:34px;font-weight:700;line-height:1;letter-spacing:-1px;}
+.kpi-card.fx::before{background:var(--teal);}
+.kpi-label{font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:6px;font-family:'Oswald',sans-serif;font-weight:300;}
+.kpi-pct{font-family:'Oswald',sans-serif;font-size:32px;font-weight:700;line-height:1;letter-spacing:-1px;}
 .kpi-card.asset .kpi-pct{color:var(--gold);}
 .kpi-card.fx    .kpi-pct{color:var(--teal);}
-.kpi-bar-wrap{height:3px;background:var(--br);margin:8px 0 5px;overflow:hidden;border-radius:1px;}
+.kpi-bar-wrap{height:3px;background:var(--br);margin:7px 0 5px;overflow:hidden;border-radius:1px;}
 .kpi-bar{height:100%;border-radius:1px;transition:width 1s cubic-bezier(.4,0,.2,1);}
 .kpi-card.asset .kpi-bar{background:linear-gradient(90deg,var(--gold),var(--fire));}
 .kpi-card.fx    .kpi-bar{background:linear-gradient(90deg,var(--teal),var(--green));}
-.kpi-meta{display:flex;justify-content:space-between;font-size:9px;color:var(--t3);
-  font-family:'Oswald',sans-serif;font-weight:300;}
-.kpi-badge{
-  display:inline-block;font-size:8px;letter-spacing:1px;padding:1px 6px;
-  border:1px solid;margin-top:5px;font-family:'Oswald',sans-serif;font-weight:300;
-}
-.badge-ok  {color:var(--green);border-color:rgba(0,230,118,0.4);}
-.badge-near{color:var(--gold); border-color:rgba(255,179,0,0.4);}
-.badge-low {color:var(--t2);   border-color:var(--br);}
-.badge-bad {color:var(--red);  border-color:rgba(255,82,82,0.4);}
+.kpi-meta{display:flex;justify-content:space-between;font-size:9px;color:var(--t3);font-family:'Oswald',sans-serif;font-weight:300;}
+.kpi-badge{display:inline-block;font-size:8px;letter-spacing:1px;padding:1px 6px;border:1px solid;margin-top:4px;font-family:'Oswald',sans-serif;font-weight:300;}
+.badge-ok{color:var(--green);border-color:rgba(0,230,118,0.4);}
+.badge-near{color:var(--gold);border-color:rgba(255,179,0,0.4);}
+.badge-low{color:var(--t2);border-color:var(--br);}
+.badge-bad{color:var(--red);border-color:rgba(255,82,82,0.4);}
 
-/* ── FX TODAY INPUT ── */
-.fx-input-card{
-  background:var(--card);border:1px solid var(--br2);
-  padding:14px 16px;
-}
-.fx-input-top{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:10px;
-}
+.section-divider{display:flex;align-items:center;gap:10px;font-size:9px;letter-spacing:4px;color:var(--t3);text-transform:uppercase;}
+.section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--br);}
+.section-divider.fire-div{color:var(--fire2);}
+.section-divider.fire-div::before,.section-divider.fire-div::after{background:rgba(255,87,34,0.2);}
+.section-divider.health-div{color:var(--health2);}
+.section-divider.health-div::before,.section-divider.health-div::after{background:rgba(124,77,255,0.2);}
+
+.fx-input-card{background:var(--card);border:1px solid var(--br2);padding:13px 14px;}
+.fx-input-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
 .fx-input-title{font-size:10px;letter-spacing:3px;color:var(--teal);text-transform:uppercase;font-family:'Oswald',sans-serif;}
 .fx-today-result{font-size:11px;color:var(--t2);}
 .fx-today-result.pos{color:var(--green2);}
 .fx-today-result.neg{color:var(--red2);}
-.fx-input-row{display:flex;align-items:center;gap:8px;}
-.fx-inp{
-  flex:1;background:var(--card2);border:1px solid var(--br2);
-  color:var(--text);font-family:'Oswald',sans-serif;font-size:22px;font-weight:400;
-  padding:10px 12px;outline:none;transition:border-color .2s;
-  -webkit-appearance:none;text-align:right;
-  border-radius:0;
-}
+.fx-input-row{display:flex;align-items:center;gap:7px;}
+.fx-inp{flex:1;background:var(--card2);border:1px solid var(--br2);color:var(--text);font-family:'Oswald',sans-serif;font-size:20px;padding:9px 10px;outline:none;transition:border-color .2s;-webkit-appearance:none;text-align:right;}
 .fx-inp:focus{border-color:var(--teal);}
-.fx-inp::placeholder{color:var(--t4);font-size:16px;}
-.fx-unit{font-size:12px;color:var(--t2);white-space:nowrap;min-width:16px;}
-.fx-btns{display:flex;gap:6px;}
-.fx-btn{
-  padding:10px 14px;background:transparent;border:1px solid;
-  font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;
-  cursor:pointer;transition:all .2s;text-transform:uppercase;white-space:nowrap;
-}
-.fx-btn.save  {border-color:var(--teal);color:var(--teal);}
+.fx-inp::placeholder{color:var(--t4);font-size:14px;}
+.fx-unit{font-size:11px;color:var(--t2);white-space:nowrap;}
+.fx-btns{display:flex;gap:5px;}
+.fx-btn{padding:9px 12px;background:transparent;border:1px solid;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;white-space:nowrap;}
+.fx-btn.save{border-color:var(--teal);color:var(--teal);}
 .fx-btn.save:active{background:rgba(0,188,212,0.15);}
-.fx-btn.zero  {border-color:var(--br2);color:var(--t3);font-size:11px;}
+.fx-btn.zero{border-color:var(--br2);color:var(--t3);font-size:10px;}
 .fx-btn.zero:active{background:rgba(255,255,255,0.04);}
-.fx-quick{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
-.fx-quick-btn{
-  padding:5px 10px;background:transparent;border:1px solid var(--br2);
-  color:var(--t3);font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1px;
-  cursor:pointer;transition:all .15s;
-}
+.fx-quick{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;}
+.fx-quick-btn{padding:4px 9px;background:transparent;border:1px solid var(--br2);color:var(--t3);font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .15s;}
 .fx-quick-btn:active{border-color:var(--teal);color:var(--teal);}
-.fx-monthly-bar{margin-top:10px;padding-top:10px;border-top:1px solid var(--br);}
-.fx-monthly-label{
-  display:flex;justify-content:space-between;
-  font-size:9px;color:var(--t3);font-family:'Oswald',sans-serif;
-  letter-spacing:1px;margin-bottom:5px;
-}
+.fx-monthly-bar{margin-top:9px;padding-top:9px;border-top:1px solid var(--br);}
+.fx-monthly-label{display:flex;justify-content:space-between;font-size:9px;color:var(--t3);font-family:'Oswald',sans-serif;letter-spacing:1px;margin-bottom:4px;}
 .fx-monthly-track{height:4px;background:var(--br);border-radius:2px;overflow:hidden;}
 .fx-monthly-fill{height:100%;border-radius:2px;transition:width .8s cubic-bezier(.4,0,.2,1);}
 
-/* ── ASSET INPUT (月末のみ) ── */
-.asset-input-card{
-  background:var(--card);border:1px solid var(--br2);border-left:3px solid var(--gold);
-  padding:12px 14px;display:none;
-}
-.asset-input-card.show{display:block;}
-.asset-input-title{font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;
-  margin-bottom:10px;font-family:'Oswald',sans-serif;}
-.asset-inp-row{display:flex;align-items:center;gap:8px;}
-.asset-inp{
-  flex:1;background:var(--card2);border:1px solid var(--br2);color:var(--text);
-  font-family:'Oswald',sans-serif;font-size:20px;padding:9px 10px;
-  outline:none;transition:border-color .2s;-webkit-appearance:none;text-align:right;
-}
-.asset-inp:focus{border-color:var(--gold);}
-.asset-unit{font-size:12px;color:var(--t2);white-space:nowrap;}
-.asset-save{
-  padding:9px 16px;background:transparent;border:1px solid var(--gold);
-  color:var(--gold);font-family:'Oswald',sans-serif;font-size:12px;
-  letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;
-}
-.asset-save:active{background:rgba(255,179,0,0.15);}
+.health-card{background:var(--card);border:1px solid rgba(124,77,255,0.2);border-left:3px solid var(--health);padding:13px 14px;}
+.med-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.med-label{font-size:10px;letter-spacing:2px;color:var(--health2);text-transform:uppercase;font-family:'Oswald',sans-serif;min-width:36px;}
+.med-quick{display:flex;gap:5px;flex:1;}
+.med-btn{flex:1;padding:8px 4px;background:transparent;border:1px solid var(--br2);color:var(--t3);font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;text-align:center;}
+.med-btn.active{border-color:var(--health);color:var(--health2);background:rgba(124,77,255,0.1);}
+.med-result{font-size:11px;color:var(--t2);white-space:nowrap;}
+.med-result.done{color:var(--health2);}
 
-/* ── SECTION LABEL ── */
-.section-label{font-size:9px;letter-spacing:4px;color:var(--t3);text-transform:uppercase;padding-left:2px;}
+.weight-row{display:flex;align-items:center;gap:8px;padding-top:9px;border-top:1px solid var(--br);margin-top:2px;}
+.weight-label{font-size:10px;letter-spacing:2px;color:var(--health2);text-transform:uppercase;font-family:'Oswald',sans-serif;min-width:36px;}
+.weight-inp{width:88px;background:var(--card2);border:1px solid var(--br2);color:var(--text);font-family:'Oswald',sans-serif;font-size:20px;padding:8px 10px;outline:none;transition:border-color .2s;-webkit-appearance:none;text-align:right;}
+.weight-inp:focus{border-color:var(--health);}
+.weight-inp::placeholder{color:var(--t4);font-size:14px;}
+.weight-unit{font-size:12px;color:var(--t2);}
+.weight-save{padding:8px 14px;background:transparent;border:1px solid var(--health);color:var(--health2);font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.weight-save:active{background:rgba(124,77,255,0.15);}
+.weight-today{font-size:11px;color:var(--t2);flex:1;text-align:right;}
+.weight-today.recorded{color:var(--health2);}
 
-/* ── TASK CARDS ── */
-.tasks{display:flex;flex-direction:column;gap:9px;}
-.task-card{
-  background:var(--card);border:1px solid var(--br);border-radius:2px;
-  padding:16px 16px 16px 18px;display:flex;align-items:center;gap:14px;
-  cursor:pointer;position:relative;overflow:hidden;
-  transition:border-color .2s,background .2s;
-  -webkit-user-select:none;user-select:none;min-height:66px;
-}
+.weight-chart-wrap{margin-top:10px;padding-top:9px;border-top:1px solid var(--br);}
+.weight-chart-header{display:flex;justify-content:space-between;margin-bottom:6px;font-size:9px;color:var(--t3);font-family:'Oswald',sans-serif;letter-spacing:1px;}
+.weight-chart{height:48px;display:flex;align-items:flex-end;gap:2px;overflow:hidden;}
+.wbar{flex:1;min-width:0;border-radius:1px 1px 0 0;background:rgba(124,77,255,0.35);transition:height .5s cubic-bezier(.4,0,.2,1);}
+.wbar.today{background:var(--health);}
+.wbar.empty{background:var(--br);}
+
+.exercise-row{display:flex;align-items:center;gap:8px;padding-top:9px;border-top:1px solid var(--br);margin-top:2px;}
+.ex-label{font-size:10px;letter-spacing:2px;color:var(--health2);text-transform:uppercase;font-family:'Oswald',sans-serif;min-width:36px;}
+.ex-btns{display:flex;gap:5px;flex:1;}
+.ex-btn{flex:1;padding:8px 4px;background:transparent;border:1px solid var(--br2);color:var(--t3);font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .15s;text-align:center;}
+.ex-btn.active{border-color:var(--green);color:var(--green2);background:rgba(0,230,118,0.06);}
+.ex-btn:active{border-color:var(--green);color:var(--green2);}
+
+.tasks{display:flex;flex-direction:column;gap:8px;}
+.task-card{background:var(--card);border:1px solid var(--br);border-radius:2px;padding:14px 14px 14px 17px;display:flex;align-items:center;gap:13px;cursor:pointer;position:relative;overflow:hidden;transition:border-color .2s,background .2s;-webkit-user-select:none;user-select:none;min-height:62px;}
 .task-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--t3);transition:background .3s;}
 .task-card.done::before{background:var(--done-green);}
 .task-card.done{background:rgba(0,200,83,0.04);border-color:rgba(0,200,83,0.15);}
+.task-card.health-task::before{background:var(--br2);}
+.task-card.health-task.done::before{background:var(--health);}
 .task-card::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.04);opacity:0;transition:opacity .15s;}
 .task-card:active::after{opacity:1;}
-.task-check{
-  width:26px;height:26px;border:2px solid var(--br);border-radius:50%;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  transition:all .25s cubic-bezier(.4,0,.2,1);
-}
+.task-check{width:25px;height:25px;border:2px solid var(--br);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .25s cubic-bezier(.4,0,.2,1);}
 .task-card.done .task-check{background:var(--done-green);border-color:var(--done-green);transform:scale(1.1);}
-.check-icon{font-size:13px;color:#000;opacity:0;transform:scale(.5);transition:all .2s cubic-bezier(.4,0,.2,1);}
+.task-card.health-task.done .task-check{background:var(--health);border-color:var(--health);}
+.check-icon{font-size:12px;color:#fff;opacity:0;transform:scale(.5);transition:all .2s cubic-bezier(.4,0,.2,1);}
 .task-card.done .check-icon{opacity:1;transform:scale(1);}
 .task-body{flex:1;}
 .task-title{font-size:14px;font-weight:400;line-height:1.4;color:var(--text);transition:color .2s;}
 .task-card.done .task-title{color:var(--t2);}
-.task-sub{font-size:10px;color:var(--t3);margin-top:3px;letter-spacing:.5px;font-family:'Oswald',sans-serif;font-weight:300;}
+.task-sub{font-size:10px;color:var(--t3);margin-top:2px;letter-spacing:.5px;font-family:'Oswald',sans-serif;font-weight:300;}
 .task-tag{font-size:9px;padding:2px 7px;border:1px solid;letter-spacing:2px;text-transform:uppercase;flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:300;}
-.tag-fx    {color:var(--gold); border-color:rgba(255,179,0,0.4);}
-.tag-fire  {color:var(--fire2);border-color:rgba(255,87,34,0.4);}
-.tag-invest{color:var(--teal); border-color:rgba(0,188,212,0.4);}
-.tag-check {color:var(--green);border-color:rgba(0,230,118,0.4);}
+.tag-fx{color:var(--gold);border-color:rgba(255,179,0,0.4);}
+.tag-fire{color:var(--fire2);border-color:rgba(255,87,34,0.4);}
+.tag-check{color:var(--green);border-color:rgba(0,230,118,0.4);}
+.tag-health{color:var(--health2);border-color:rgba(124,77,255,0.4);}
 
-/* ── ALL DONE ── */
+.asset-input-card{background:var(--card);border:1px solid var(--br2);border-left:3px solid var(--gold);padding:12px 14px;display:none;}
+.asset-input-card.show{display:block;}
+.asset-input-title{font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:10px;font-family:'Oswald',sans-serif;}
+.asset-inp-row{display:flex;align-items:center;gap:8px;}
+.asset-inp{flex:1;background:var(--card2);border:1px solid var(--br2);color:var(--text);font-family:'Oswald',sans-serif;font-size:20px;padding:9px 10px;outline:none;transition:border-color .2s;-webkit-appearance:none;text-align:right;}
+.asset-inp:focus{border-color:var(--gold);}
+.asset-unit{font-size:12px;color:var(--t2);}
+.asset-save{padding:9px 16px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.asset-save:active{background:rgba(255,179,0,0.15);}
+
 .all-done{display:none;flex-direction:column;align-items:center;text-align:center;padding:28px 20px;gap:12px;}
 .all-done.show{display:flex;}
-.done-emoji{font-size:60px;animation:bounce .6s cubic-bezier(.4,0,.2,1);}
+.done-emoji{font-size:56px;animation:bounce .6s cubic-bezier(.4,0,.2,1);}
 .done-title{font-family:'Oswald',sans-serif;font-size:26px;font-weight:500;color:var(--done-green);letter-spacing:2px;}
 .done-sub{font-size:13px;color:var(--t2);line-height:1.8;}
 .done-msg{font-size:11px;color:var(--t3);border:1px solid var(--br);padding:10px 16px;letter-spacing:1px;}
 @keyframes bounce{0%{transform:scale(0);}60%{transform:scale(1.2);}100%{transform:scale(1);}}
 
-/* ── STREAK ── */
-.streak-row{display:flex;align-items:center;gap:6px;padding:10px 12px;background:var(--card);border:1px solid var(--br);}
+.streak-row{display:flex;align-items:center;gap:6px;padding:9px 12px;background:var(--card);border:1px solid var(--br);}
 .streak-dots{display:flex;gap:3px;flex:1;overflow:hidden;}
-.sdot{width:12px;height:12px;border-radius:2px;flex-shrink:0;}
-.l0{background:var(--br);}
-.l1{background:rgba(255,179,0,.2);}
-.l2{background:rgba(255,179,0,.45);}
-.l3{background:var(--gold);}
-.l4{background:var(--fire);}
+.sdot{width:11px;height:11px;border-radius:2px;flex-shrink:0;}
+.l0{background:var(--br);}.l1{background:rgba(255,179,0,.2);}.l2{background:rgba(255,179,0,.45);}.l3{background:var(--gold);}.l4{background:var(--fire);}
 .streak-label{font-family:'Oswald',sans-serif;font-size:13px;color:var(--fire2);white-space:nowrap;letter-spacing:1px;}
 
-/* ── NAV ── */
 .nav-links{display:flex;flex-direction:column;gap:5px;}
-.nav-link{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:11px 14px;background:var(--card);border:1px solid var(--br);
-  color:var(--t2);font-size:12px;text-decoration:none;letter-spacing:1px;
-  transition:border-color .2s,color .2s;
-}
+.nav-link{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--card);border:1px solid var(--br);color:var(--t2);font-size:12px;text-decoration:none;letter-spacing:1px;transition:border-color .2s,color .2s;}
 .nav-link:active{border-color:var(--t2);color:var(--text);}
 .nav-arrow{font-size:16px;color:var(--t3);}
 
-/* ── TOAST ── */
-.toast{
-  position:fixed;bottom:24px;left:50%;
-  transform:translateX(-50%) translateY(60px);
-  background:var(--card2);border:1px solid var(--gold);color:var(--gold);
-  padding:9px 22px;font-size:12px;letter-spacing:2px;opacity:0;
-  transition:all .3s;pointer-events:none;z-index:100;white-space:nowrap;
-}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--card2);border:1px solid var(--gold);color:var(--gold);padding:9px 22px;font-size:12px;letter-spacing:2px;opacity:0;transition:all .3s;pointer-events:none;z-index:100;white-space:nowrap;}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
 
-/* ── ANIMATIONS ── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 .task-card{animation:fadeUp .4s ease both;}
-.task-card:nth-child(1){animation-delay:.04s;}
-.task-card:nth-child(2){animation-delay:.08s;}
-.task-card:nth-child(3){animation-delay:.12s;}
-.task-card:nth-child(4){animation-delay:.16s;}
+.task-card:nth-child(1){animation-delay:.04s;}.task-card:nth-child(2){animation-delay:.08s;}.task-card:nth-child(3){animation-delay:.12s;}.task-card:nth-child(4){animation-delay:.16s;}.task-card:nth-child(5){animation-delay:.20s;}
 .kpi-card{animation:fadeUp .35s ease both;}
-.kpi-card:nth-child(1){animation-delay:.01s;}
-.kpi-card:nth-child(2){animation-delay:.05s;}
+.kpi-card:nth-child(1){animation-delay:.01s;}.kpi-card:nth-child(2){animation-delay:.05s;}
 @keyframes checkPop{0%{transform:scale(1);}40%{transform:scale(.92);}70%{transform:scale(1.08);}100%{transform:scale(1);}}
 .task-card.just-done{animation:checkPop .35s cubic-bezier(.4,0,.2,1);}
 </style>
@@ -236,14 +191,12 @@ body{
 <body>
 <div class="app">
 
-  <!-- HEADER -->
   <div class="header">
     <div class="fire-count" id="fireCd">―</div>
     <div class="fire-count-label">DAYS TO FIRE</div>
     <div class="date-label" id="dateLabel"></div>
   </div>
 
-  <!-- DAILY PROGRESS -->
   <div class="progress-wrap">
     <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
     <div class="progress-meta">
@@ -252,39 +205,32 @@ body{
     </div>
   </div>
 
-  <!-- KPI CARDS -->
   <div class="kpi-row">
     <div class="kpi-card asset">
       <div class="kpi-label">資産 / 目標 1.2億</div>
       <div class="kpi-pct" id="assetPct">46%</div>
       <div class="kpi-bar-wrap"><div class="kpi-bar" id="assetBar" style="width:46%"></div></div>
-      <div class="kpi-meta">
-        <span id="assetNow">5,524万</span>
-        <span>12,000万</span>
-      </div>
-      <div id="assetBadge" class="kpi-badge badge-low">初期値</div>
+      <div class="kpi-meta"><span id="assetNow">5,524万</span><span>12,000万</span></div>
+      <div id="assetBadge" class="kpi-badge badge-low">積み上げ中</div>
     </div>
     <div class="kpi-card fx">
       <div class="kpi-label">FX月累計 / 30万</div>
       <div class="kpi-pct" id="fxPct">0%</div>
       <div class="kpi-bar-wrap"><div class="kpi-bar" id="fxBar" style="width:0%"></div></div>
-      <div class="kpi-meta">
-        <span id="fxNow">0万</span>
-        <span>30万円</span>
-      </div>
-      <div id="fxBadge" class="kpi-badge badge-low" id="fxBadge">今月入力待ち</div>
+      <div class="kpi-meta"><span id="fxNow">0万</span><span>30万円</span></div>
+      <div id="fxBadge" class="kpi-badge badge-low">入力待ち</div>
     </div>
   </div>
 
-  <!-- FX TODAY INPUT -->
+  <div class="section-divider fire-div">FIRE アクション</div>
+
   <div class="fx-input-card">
     <div class="fx-input-top">
       <div class="fx-input-title">今日のFX損益</div>
       <div class="fx-today-result" id="fxTodayResult">未入力</div>
     </div>
     <div class="fx-input-row">
-      <input type="number" class="fx-inp" id="fxInp"
-        placeholder="例: 12500" inputmode="numeric" />
+      <input type="number" class="fx-inp" id="fxInp" placeholder="例: 12500" inputmode="numeric" />
       <div class="fx-unit">円</div>
       <div class="fx-btns">
         <button class="fx-btn save" onclick="saveFxToday()">記録</button>
@@ -304,15 +250,14 @@ body{
         <span>今月累計</span>
         <span id="fxMonthlyLabel">0円 / 目標300,000円</span>
       </div>
-      <div class="fx-monthly-track">
-        <div class="fx-monthly-fill" id="fxMonthlyFill" style="width:0%"></div>
-      </div>
+      <div class="fx-monthly-track"><div class="fx-monthly-fill" id="fxMonthlyFill" style="width:0%"></div></div>
     </div>
   </div>
 
-  <!-- ASSET INPUT (月末5日間のみ) -->
+  <div class="tasks" id="fireTasks"></div>
+
   <div class="asset-input-card" id="assetInputCard">
-    <div class="asset-input-title">⚡ 月末チェック — 今月の資産総額を入力</div>
+    <div class="asset-input-title">月末チェック — 今月の資産総額を入力</div>
     <div class="asset-inp-row">
       <input type="number" class="asset-inp" id="assetInp" placeholder="5524" inputmode="numeric" />
       <div class="asset-unit">万円</div>
@@ -320,365 +265,285 @@ body{
     </div>
   </div>
 
-  <!-- TASKS -->
-  <div class="section-label" id="taskSectionLabel">今日やること</div>
-  <div class="tasks" id="taskList"></div>
+  <div class="section-divider health-div">健康 ルーティン</div>
 
-  <!-- ALL DONE -->
+  <div class="health-card">
+    <div class="med-row">
+      <div class="med-label">瞑想</div>
+      <div class="med-quick">
+        <button class="med-btn" id="med5"  onclick="setMed(5)"> 5分</button>
+        <button class="med-btn" id="med10" onclick="setMed(10)">10分</button>
+        <button class="med-btn" id="med15" onclick="setMed(15)">15分</button>
+        <button class="med-btn" id="med20" onclick="setMed(20)">20分</button>
+      </div>
+      <div class="med-result" id="medResult">未記録</div>
+    </div>
+    <div class="weight-row">
+      <div class="weight-label">体重</div>
+      <input type="number" class="weight-inp" id="weightInp" placeholder="70.0" inputmode="decimal" step="0.1" />
+      <div class="weight-unit">kg</div>
+      <button class="weight-save" onclick="saveWeight()">記録</button>
+      <div class="weight-today" id="weightToday">―</div>
+    </div>
+    <div class="weight-chart-wrap">
+      <div class="weight-chart-header">
+        <span>体重推移（30日）</span>
+        <span id="weightRange">―</span>
+      </div>
+      <div class="weight-chart" id="weightChart"></div>
+    </div>
+    <div class="exercise-row">
+      <div class="ex-label">運動</div>
+      <div class="ex-btns">
+        <button class="ex-btn" id="ex-walk" onclick="setExercise('walk')">ウォーク</button>
+        <button class="ex-btn" id="ex-run"  onclick="setExercise('run')">ラン</button>
+        <button class="ex-btn" id="ex-gym"  onclick="setExercise('gym')">筋トレ</button>
+        <button class="ex-btn" id="ex-tri"  onclick="setExercise('tri')">トライ</button>
+        <button class="ex-btn" id="ex-rest" onclick="setExercise('rest')">休養</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tasks" id="healthTasks"></div>
+
   <div class="all-done" id="allDone">
     <div class="done-emoji">🔥</div>
     <div class="done-title">今日は完了！</div>
-    <div class="done-sub">お疲れ様でした、とおるさん。<br>また明日もここを開いてください。</div>
+    <div class="done-sub">お疲れ様でした、とおるさん。<br>身体を整えながらFIREへ。また明日。</div>
     <div class="done-msg" id="doneFire"></div>
   </div>
 
-  <!-- STREAK -->
   <div class="streak-row">
     <div class="streak-dots" id="streakDots"></div>
     <div class="streak-label" id="streakLabel">0日連続</div>
   </div>
 
-  <!-- NAV -->
-  <div class="section-label">ツール一覧</div>
+  <div class="section-divider">ツール</div>
   <div class="nav-links">
-    <a class="nav-link" href="https://chikuwa1225.github.io/fire-tools/fx_tracker.html">
-      <span>FXトラッカー</span><span class="nav-arrow">›</span>
-    </a>
-    <a class="nav-link" href="https://chikuwa1225.github.io/fire-tools/asset_simulator.html">
-      <span>資産推移シミュレーター</span><span class="nav-arrow">›</span>
-    </a>
-    <a class="nav-link" href="https://chikuwa1225.github.io/fire-tools/education_simulator_v2.html">
-      <span>教育費シミュレーター</span><span class="nav-arrow">›</span>
-    </a>
-    <a class="nav-link" href="https://chikuwa1225.github.io/fire-tools/fire_cockpit_cloud.html">
-      <span>FIREコックピット（詳細版）</span><span class="nav-arrow">›</span>
-    </a>
+    <a class="nav-link" href="https://chikuwa1225.github.io/fire-tools/fx_tracker.html"><span>FXトラッカー</span><span class="nav-arrow">›</span></a>
+    <a class="nav-link" href="https://chikuwa1225.github.io/fire-tools/asset_simulator.html"><span>資産推移シミュレーター</span><span class="nav-arrow">›</span></a>
+    <a class="nav-link" href="https://chikuwa1225.github.io/fire-tools/education_simulator_v2.html"><span>教育費シミュレーター</span><span class="nav-arrow">›</span></a>
+    <a class="nav-link" href="https://chikuwa1225.github.io/fire-tools/fire_cockpit_cloud.html"><span>FIREコックピット（詳細版）</span><span class="nav-arrow">›</span></a>
   </div>
 
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
-// ════════════════════════════════════════
-// CONFIG
-// ════════════════════════════════════════
-const FIRE_DATE    = new Date('2033-01-01');
-const TARGET_FX    = 300000;   // 月30万円
-const TARGET_ASSET = 12000;    // 万円（楽観目標）
-const SK           = 'fire_daily_v4';
+const FIRE_DATE=new Date('2033-01-01'),TARGET_FX=300000,TARGET_ASSET=12000,SK='fire_daily_v4';
+const today=()=>new Date().toISOString().slice(0,10);
+const thisMonth=()=>new Date().toISOString().slice(0,7);
+const prevMonth=()=>{const d=new Date();d.setMonth(d.getMonth()-1);return d.toISOString().slice(0,7);};
+const load=()=>{try{return JSON.parse(localStorage.getItem(SK))||{};}catch(e){return{};}};
+const store=d=>localStorage.setItem(SK,JSON.stringify(d));
 
-function today()     { return new Date().toISOString().slice(0,10); }
-function thisMonth() { return new Date().toISOString().slice(0,7); }
-function prevMonth() {
-  const d = new Date(); d.setMonth(d.getMonth()-1);
-  return d.toISOString().slice(0,7);
-}
-
-function load()   { try{ return JSON.parse(localStorage.getItem(SK))||{}; }catch(e){ return {}; } }
-function store(d) { localStorage.setItem(SK, JSON.stringify(d)); }
-
-// ════════════════════════════════════════
-// TASK DEFINITIONS
-// ════════════════════════════════════════
-const DOW = new Date().getDay();
-const DAILY_TASKS = [
-  {id:'t1', title:'FXチャートを確認する',  sub:'GOLD/USD 5分足 — 20EMA・200EMAをチェック', tag:'fx'},
-  {id:'t2', title:'資産残高を1秒見る',      sub:'MoneyForward アプリを開くだけでOK',         tag:'fire'},
-  {id:'t3', title:'昨日を1行振り返る',      sub:'良かった・次改善すること',                  tag:'check'},
+const DOW=new Date().getDay();
+const FIRE_TASKS=[
+  {id:'t1',title:'FXチャートを確認する',sub:'GOLD/USD 5分足 — 20EMA・200EMAをチェック',tag:'fx'},
+  {id:'t2',title:'資産残高を1秒見る',sub:'MoneyForward アプリを開くだけでOK',tag:'fire'},
+  {id:'t3',title:'昨日を1行振り返る',sub:'FX・FIRE・日常の気づきを1行で',tag:'check'},
 ];
-const EXTRA = {
-  1: {id:'t4', title:'週次FXレビュー準備', sub:'友人との週次レビュー用メモを整理', tag:'fx'},
-  5: {id:'t4', title:'今週のFXを振り返る', sub:'良かった点・悪かった点を考える',  tag:'check'},
+const FIRE_EXTRA={
+  1:{id:'t4',title:'週次FXレビュー準備',sub:'友人との週次レビュー用メモを整理',tag:'fx'},
+  5:{id:'t4',title:'今週のFXを振り返る',sub:'良かった点・悪かった点を考える',tag:'check'},
 };
-function getTasks() {
-  const t = [...DAILY_TASKS];
-  if (EXTRA[DOW]) t.push(EXTRA[DOW]);
-  return t;
+const HEALTH_TASKS=[
+  {id:'h1',title:'瞑想する',sub:'上の時間ボタンを押して記録',tag:'health',health:true},
+  {id:'h2',title:'体重を測る',sub:'起床後すぐ、上の欄に入力',tag:'health',health:true},
+  {id:'h3',title:'運動する',sub:'種別を上のボタンで選んで記録',tag:'health',health:true},
+];
+const getFireTasks=()=>{const t=[...FIRE_TASKS];if(FIRE_EXTRA[DOW])t.push(FIRE_EXTRA[DOW]);return t;};
+const getAllTasks=()=>[...getFireTasks(),...HEALTH_TASKS];
+
+const getTodayState=()=>{const d=load();return d[today()]||{};};
+function saveTodayState(s){
+  const d=load();d[today()]=s;
+  const specKeys=Object.keys(d).filter(k=>k.startsWith('fx_')||k.startsWith('asset_')||k.startsWith('w_')||k.startsWith('med_')||k.startsWith('ex_'));
+  const dayKeys=Object.keys(d).filter(k=>!specKeys.includes(k)).sort().slice(-90);
+  const t={};dayKeys.forEach(k=>t[k]=d[k]);specKeys.forEach(k=>t[k]=d[k]);store(t);
 }
 
-// ════════════════════════════════════════
-// STATE HELPERS
-// ════════════════════════════════════════
-function getTodayState() { const d=load(); return d[today()]||{}; }
-function saveTodayState(s) {
-  const d=load(); d[today()]=s;
-  const keys=Object.keys(d).filter(k=>!k.startsWith('fx_')).sort().slice(-90);
-  const t={}; keys.forEach(k=>t[k]=d[k]);
-  // preserve fx and asset keys
-  Object.keys(d).filter(k=>k.startsWith('fx_')||k.startsWith('asset_')).forEach(k=>t[k]=d[k]);
-  store(t);
+const getFxMonthly=()=>{const d=load(),mon=thisMonth(),keys=Object.keys(d).filter(k=>k.startsWith('fx_'+mon));let t=0,days=0;keys.forEach(k=>{if(d[k]!==null&&d[k]!==undefined){t+=d[k];days++;}});return{total:t,days};};
+const getTodayFx=()=>{const d=load(),v=d['fx_'+today()];return v!==undefined?v:null;};
+const saveFxDay=v=>{const d=load();d['fx_'+today()]=v;store(d);};
+const getLatestAsset=()=>{const d=load(),m=thisMonth(),p=prevMonth();if(d['asset_'+m]!==undefined)return{val:d['asset_'+m]};if(d['asset_'+p]!==undefined)return{val:d['asset_'+p]};return{val:5524};};
+const saveWeightDay=v=>{const d=load();d['w_'+today()]=v;store(d);};
+const getTodayWeight=()=>{const d=load();return d['w_'+today()]||null;};
+function getLast30Weights(){const d=load(),now=new Date(),res=[];for(let i=29;i>=0;i--){const dt=new Date(now);dt.setDate(now.getDate()-i);const k='w_'+dt.toISOString().slice(0,10);res.push({date:dt.toISOString().slice(0,10),val:d[k]||null});}return res;}
+const getTodayMed=()=>{const d=load();return d['med_'+today()]||null;};
+const saveMedDay=min=>{const d=load();d['med_'+today()]=min;store(d);};
+const getTodayEx=()=>{const d=load();return d['ex_'+today()]||null;};
+const saveExDay=type=>{const d=load();d['ex_'+today()]=type;store(d);};
+
+function setFxVal(amount){const cur=parseInt(document.getElementById('fxInp').value)||0;document.getElementById('fxInp').value=cur+amount;}
+function saveFxToday(){
+  const val=parseInt(document.getElementById('fxInp').value);
+  if(isNaN(val)){showToast('金額を入力してください');return;}
+  saveFxDay(val);document.getElementById('fxInp').value='';
+  const s=getTodayState();s['t1']=true;saveTodayState(s);
+  renderAll();showToast((val>=0?'+':'')+val.toLocaleString()+'円 記録しました');
+}
+function saveFxZero(){
+  saveFxDay(0);const s=getTodayState();s['t1']=true;saveTodayState(s);
+  renderAll();showToast('ノートレード日として記録しました');
+}
+function renderFxInput(){
+  const todayFx=getTodayFx(),{total,days}=getFxMonthly();
+  const pct=Math.min(Math.round(Math.max(total,0)/TARGET_FX*100),100);
+  const todayEl=document.getElementById('fxTodayResult');
+  if(todayFx===null){todayEl.textContent='未入力';todayEl.className='fx-today-result';}
+  else if(todayFx===0){todayEl.textContent='ノートレード';todayEl.className='fx-today-result';}
+  else{todayEl.textContent=(todayFx>=0?'+':'')+todayFx.toLocaleString()+'円';todayEl.className='fx-today-result '+(todayFx>=0?'pos':'neg');}
+  const col=pct>=100?'var(--green)':pct>=60?'var(--teal)':pct>=30?'var(--gold)':'var(--t3)';
+  document.getElementById('fxMonthlyFill').style.cssText=`width:${pct}%;background:${col}`;
+  document.getElementById('fxMonthlyLabel').textContent=`${total>=0?'+':''}${total.toLocaleString()}円 / 目標300,000円 (${days}日記録)`;
 }
 
-// FX: 今月の累計を計算
-function getFxMonthly() {
-  const d    = load();
-  const mon  = thisMonth();
-  const keys = Object.keys(d).filter(k => k.startsWith('fx_' + mon));
-  let total  = 0;
-  let days   = 0;
-  keys.forEach(k => {
-    const v = d[k];
-    if (v !== null && v !== undefined) { total += v; days++; }
-  });
-  return { total, days };
+function setMed(min){
+  saveMedDay(min);
+  [5,10,15,20].forEach(m=>{const b=document.getElementById('med'+m);if(b)b.className='med-btn'+(m===min?' active':'');});
+  document.getElementById('medResult').textContent=min+'分完了';
+  document.getElementById('medResult').className='med-result done';
+  const s=getTodayState();s['h1']=true;saveTodayState(s);
+  renderTasks();showToast('瞑想 '+min+'分 記録しました');
+  if(navigator.vibrate)navigator.vibrate(40);
+}
+function renderMed(){
+  const min=getTodayMed();
+  const res=document.getElementById('medResult');
+  if(min){res.textContent=min+'分完了';res.className='med-result done';}
+  else{res.textContent='未記録';res.className='med-result';}
+  [5,10,15,20].forEach(m=>{const b=document.getElementById('med'+m);if(b)b.className='med-btn'+(m===min?' active':'');});
 }
 
-function getTodayFx() {
-  const d = load();
-  const k = 'fx_' + today();
-  return d[k] !== undefined ? d[k] : null;
+function saveWeight(){
+  const val=parseFloat(document.getElementById('weightInp').value);
+  if(isNaN(val)||val<30||val>200){showToast('体重を入力してください（kg）');return;}
+  saveWeightDay(val);document.getElementById('weightInp').value='';
+  const s=getTodayState();s['h2']=true;saveTodayState(s);
+  renderWeight();renderTasks();showToast('体重 '+val+'kg 記録しました');
+  if(navigator.vibrate)navigator.vibrate(40);
+}
+function renderWeight(){
+  const tw=getTodayWeight();
+  const el=document.getElementById('weightToday');
+  if(tw){el.textContent=tw+'kg';el.className='weight-today recorded';}
+  else{el.textContent='―';el.className='weight-today';}
+  const data=getLast30Weights();
+  const vals=data.map(d=>d.val).filter(v=>v!==null);
+  if(!vals.length){document.getElementById('weightChart').innerHTML='<div style="color:var(--t4);font-size:10px;padding:16px 0;width:100%;text-align:center;">記録がありません</div>';return;}
+  const min=Math.min(...vals)-0.5,max=Math.max(...vals)+0.5,range=max-min||1;
+  document.getElementById('weightRange').textContent=Math.min(...vals).toFixed(1)+'〜'+Math.max(...vals).toFixed(1)+'kg';
+  document.getElementById('weightChart').innerHTML=data.map(d=>{
+    const isToday=d.date===today();
+    const pct=d.val?Math.round((d.val-min)/range*100):0;
+    return '<div class="wbar'+(isToday?' today':'')+(d.val?'':' empty')+'" style="height:'+(d.val?Math.max(pct,4):6)+'%" title="'+d.date+(d.val?': '+d.val+'kg':'')+'"></div>';
+  }).join('');
 }
 
-function saveFxDay(val) {
-  const d = load();
-  d['fx_' + today()] = val;
-  store(d);
+function setExercise(type){
+  saveExDay(type);
+  const LABELS={walk:'ウォーク',run:'ラン',gym:'筋トレ',tri:'トライ',rest:'休養'};
+  ['walk','run','gym','tri','rest'].forEach(t=>{const b=document.getElementById('ex-'+t);if(b)b.className='ex-btn'+(t===type?' active':'');});
+  const s=getTodayState();s['h3']=true;saveTodayState(s);
+  renderTasks();showToast('運動記録: '+LABELS[type]);
+  if(navigator.vibrate)navigator.vibrate(40);
+}
+function renderExercise(){
+  const ex=getTodayEx();
+  ['walk','run','gym','tri','rest'].forEach(t=>{const b=document.getElementById('ex-'+t);if(b)b.className='ex-btn'+(t===ex?' active':'');});
 }
 
-function getLatestAsset() {
-  const d    = load();
-  const mon  = thisMonth();
-  const prev = prevMonth();
-  if (d['asset_' + mon]  !== undefined) return { val: d['asset_' + mon],  isThisMonth: true };
-  if (d['asset_' + prev] !== undefined) return { val: d['asset_' + prev], isThisMonth: false };
-  return { val: 5524, isThisMonth: false }; // 実績値をデフォルトに
-}
-
-// ════════════════════════════════════════
-// FX INPUT
-// ════════════════════════════════════════
-function setFxVal(amount) {
-  const cur = parseInt(document.getElementById('fxInp').value) || 0;
-  document.getElementById('fxInp').value = cur + amount;
-}
-
-function saveFxToday() {
-  const val = parseInt(document.getElementById('fxInp').value);
-  if (isNaN(val)) { showToast('金額を入力してください'); return; }
-  saveFxDay(val);
-  document.getElementById('fxInp').value = '';
-  renderFxInput();
-  renderKpi();
-  showToast(val >= 0 ? `+${val.toLocaleString()}円 記録しました` : `${val.toLocaleString()}円 記録しました`);
-
-  // FXタスクを完了にする
-  const state = getTodayState();
-  state['t1'] = true;
-  saveTodayState(state);
-  render();
-}
-
-function saveFxZero() {
-  saveFxDay(0);
-  renderFxInput();
-  renderKpi();
-  showToast('ノートレード日として記録しました');
-  // FXタスクを完了にする
-  const state = getTodayState();
-  state['t1'] = true;
-  saveTodayState(state);
-  render();
-}
-
-function renderFxInput() {
-  const todayFx   = getTodayFx();
-  const { total, days } = getFxMonthly();
-  const pct       = Math.min(Math.round(Math.max(total, 0) / TARGET_FX * 100), 100);
-
-  // 今日の結果表示
-  const todayEl = document.getElementById('fxTodayResult');
-  if (todayFx === null) {
-    todayEl.textContent = '未入力';
-    todayEl.className   = 'fx-today-result';
-  } else if (todayFx === 0) {
-    todayEl.textContent = 'ノートレード';
-    todayEl.className   = 'fx-today-result';
-  } else {
-    todayEl.textContent = (todayFx >= 0 ? '+' : '') + todayFx.toLocaleString() + '円';
-    todayEl.className   = 'fx-today-result ' + (todayFx >= 0 ? 'pos' : 'neg');
-  }
-
-  // 月間バー
-  const color = pct >= 100 ? 'var(--green)' : pct >= 60 ? 'var(--teal)' : pct >= 30 ? 'var(--gold)' : 'var(--t3)';
-  document.getElementById('fxMonthlyFill').style.width      = pct + '%';
-  document.getElementById('fxMonthlyFill').style.background = color;
-  document.getElementById('fxMonthlyLabel').textContent =
-    `${total >= 0 ? '+' : ''}${total.toLocaleString()}円 / 目標300,000円 (${days}日記録)`;
-}
-
-// ════════════════════════════════════════
-// ASSET INPUT
-// ════════════════════════════════════════
-function saveAsset() {
-  const val = parseInt(document.getElementById('assetInp').value);
-  if (isNaN(val) || val <= 0) { showToast('資産総額を入力してください'); return; }
-  const d = load();
-  d['asset_' + thisMonth()] = val;
-  store(d);
-  document.getElementById('assetInp').value = '';
+function saveAsset(){
+  const val=parseInt(document.getElementById('assetInp').value);
+  if(isNaN(val)||val<=0){showToast('資産総額を入力してください');return;}
+  const d=load();d['asset_'+thisMonth()]=val;store(d);
+  document.getElementById('assetInp').value='';
   document.getElementById('assetInputCard').classList.remove('show');
-  renderKpi();
-  showToast(`資産 ${val.toLocaleString()}万円 を保存しました`);
+  renderKpi();showToast('資産 '+val.toLocaleString()+'万円 を保存しました');
+}
+function checkMonthEnd(){
+  const now=new Date(),lastDay=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const d=load();
+  document.getElementById('assetInputCard').classList.toggle('show',now.getDate()>=lastDay-4&&d['asset_'+thisMonth()]===undefined);
 }
 
-// 月末5日間だけ表示
-function checkMonthEnd() {
-  const now        = new Date();
-  const lastDay    = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
-  const isMonthEnd = now.getDate() >= lastDay - 4;
-  const d          = load();
-  const alreadySaved = d['asset_' + thisMonth()] !== undefined;
-  document.getElementById('assetInputCard').classList.toggle('show', isMonthEnd && !alreadySaved);
+function renderKpi(){
+  const{val:asset}=getLatestAsset();
+  const ap=Math.min(Math.round(asset/TARGET_ASSET*100),100);
+  document.getElementById('assetPct').textContent=ap+'%';
+  document.getElementById('assetBar').style.width=ap+'%';
+  document.getElementById('assetNow').textContent=asset.toLocaleString()+'万';
+  const ab=document.getElementById('assetBadge');
+  if(ap>=100){ab.textContent='目標達成！';ab.className='kpi-badge badge-ok';}
+  else if(ap>=70){ab.textContent='順調';ab.className='kpi-badge badge-near';}
+  else{ab.textContent='積み上げ中';ab.className='kpi-badge badge-low';}
+  const{total:fxTotal}=getFxMonthly();
+  const fp=Math.min(Math.round(Math.max(fxTotal,0)/TARGET_FX*100),100);
+  document.getElementById('fxPct').textContent=fp+'%';
+  document.getElementById('fxBar').style.width=fp+'%';
+  document.getElementById('fxNow').textContent=(fxTotal>=0?'+':'')+(fxTotal/10000).toFixed(1)+'万';
+  const fb=document.getElementById('fxBadge');
+  if(fxTotal>=TARGET_FX){fb.textContent='達成！';fb.className='kpi-badge badge-ok';}
+  else if(fxTotal>=TARGET_FX*0.6){fb.textContent='接近中';fb.className='kpi-badge badge-near';}
+  else if(fxTotal>0){fb.textContent='今月累計';fb.className='kpi-badge badge-low';}
+  else if(fxTotal<0){fb.textContent='損失中';fb.className='kpi-badge badge-bad';}
+  else{fb.textContent='入力待ち';fb.className='kpi-badge badge-low';}
 }
 
-// ════════════════════════════════════════
-// KPI RENDER
-// ════════════════════════════════════════
-function renderKpi() {
-  // 資産
-  const { val: asset } = getLatestAsset();
-  const ap = Math.min(Math.round(asset / TARGET_ASSET * 100), 100);
-  document.getElementById('assetPct').textContent  = ap + '%';
-  document.getElementById('assetBar').style.width  = ap + '%';
-  document.getElementById('assetNow').textContent  = asset.toLocaleString() + '万';
-
-  const ab = document.getElementById('assetBadge');
-  if (ap >= 100)     { ab.textContent='目標達成！'; ab.className='kpi-badge badge-ok';   }
-  else if (ap >= 70) { ab.textContent='順調';       ab.className='kpi-badge badge-near'; }
-  else               { ab.textContent='積み上げ中'; ab.className='kpi-badge badge-low';  }
-
-  // FX
-  const { total: fxTotal } = getFxMonthly();
-  const fp = Math.min(Math.round(Math.max(fxTotal, 0) / TARGET_FX * 100), 100);
-  document.getElementById('fxPct').textContent = fp + '%';
-  document.getElementById('fxBar').style.width = fp + '%';
-  document.getElementById('fxNow').textContent = (fxTotal >= 0 ? '+' : '') + (fxTotal/10000).toFixed(1) + '万';
-
-  const fb = document.getElementById('fxBadge');
-  if (fxTotal >= TARGET_FX)           { fb.textContent='達成！';  fb.className='kpi-badge badge-ok';   }
-  else if (fxTotal >= TARGET_FX*0.6)  { fb.textContent='接近中';  fb.className='kpi-badge badge-near'; }
-  else if (fxTotal > 0)               { fb.textContent='今月累計'; fb.className='kpi-badge badge-low';  }
-  else if (fxTotal < 0)               { fb.textContent='損失中';  fb.className='kpi-badge badge-bad';  }
-  else                                { fb.textContent='入力待ち'; fb.className='kpi-badge badge-low';  }
+function toggle(id){
+  const s=getTodayState();s[id]=!s[id];saveTodayState(s);
+  if(s[id]){const c=document.getElementById('card_'+id);if(c){c.classList.add('just-done');setTimeout(()=>c.classList.remove('just-done'),400);}if(navigator.vibrate)navigator.vibrate(40);}
+  renderTasks();
 }
 
-// ════════════════════════════════════════
-// TASK TOGGLE
-// ════════════════════════════════════════
-function toggle(id) {
-  const state = getTodayState();
-  state[id]   = !state[id];
-  saveTodayState(state);
-  if (state[id]) {
-    const c = document.getElementById('card_'+id);
-    if (c) { c.classList.add('just-done'); setTimeout(()=>c.classList.remove('just-done'),400); }
-    if (navigator.vibrate) navigator.vibrate(40);
-  }
-  const tasks  = getTasks();
-  const allNow = tasks.every(t => getTodayState()[t.id]);
-  if (allNow) setTimeout(()=>{ render(); showToast('🔥 今日のタスク完了！'); }, 300);
-  else render();
-}
+function renderTasks(){
+  const state=getTodayState(),fireTasks=getFireTasks(),all=getAllTasks();
+  const done=all.filter(t=>state[t.id]).length,total=all.length,allDone=done===total;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressLeft').textContent='今日: '+done+'/'+total+' 完了';
 
-// ════════════════════════════════════════
-// MAIN RENDER
-// ════════════════════════════════════════
-function render() {
-  const tasks   = getTasks();
-  const state   = getTodayState();
-  const done    = tasks.filter(t => state[t.id]).length;
-  const total   = tasks.length;
-  const allDone = done === total;
+  document.getElementById('fireTasks').innerHTML=fireTasks.map(t=>{
+    const isDone=!!state[t.id];
+    return '<div class="task-card'+(isDone?' done':'')+'" onclick="toggle(\''+t.id+'\')" id="card_'+t.id+'"><div class="task-check"><span class="check-icon">✓</span></div><div class="task-body"><div class="task-title">'+t.title+'</div><div class="task-sub">'+t.sub+'</div></div><div class="task-tag tag-'+t.tag+'">'+t.tag.toUpperCase()+'</div></div>';
+  }).join('');
 
-  // Header
-  const now  = new Date();
-  const diff = Math.ceil((FIRE_DATE - now) / (1000*60*60*24));
-  document.getElementById('fireCd').textContent    = diff.toLocaleString();
-  document.getElementById('dateLabel').textContent =
-    now.toLocaleDateString('ja-JP', {month:'long', day:'numeric', weekday:'short'});
+  document.getElementById('healthTasks').innerHTML=HEALTH_TASKS.map(t=>{
+    const isDone=!!state[t.id];
+    return '<div class="task-card health-task'+(isDone?' done':'')+'" onclick="toggle(\''+t.id+'\')" id="card_'+t.id+'"><div class="task-check"><span class="check-icon">✓</span></div><div class="task-body"><div class="task-title">'+t.title+'</div><div class="task-sub">'+t.sub+'</div></div><div class="task-tag tag-health">HEALTH</div></div>';
+  }).join('');
 
-  // Progress
-  const pct = total ? Math.round(done/total*100) : 0;
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressLeft').textContent = `今日: ${done}/${total} 完了`;
-
-  // KPI & FX input
-  renderKpi();
-  renderFxInput();
-  checkMonthEnd();
-
-  // Tasks or AllDone
-  const tl = document.getElementById('taskList');
-  const ad = document.getElementById('allDone');
-  if (allDone) {
-    tl.style.display = 'none';
+  const ad=document.getElementById('allDone');
+  if(allDone){
     ad.classList.add('show');
-    document.getElementById('taskSectionLabel').style.display = 'none';
-    document.getElementById('doneFire').textContent =
-      `FIREまであと ${diff.toLocaleString()} 日。今日の積み上げが確実に縮めている。`;
-  } else {
-    tl.style.display = 'flex';
-    ad.classList.remove('show');
-    document.getElementById('taskSectionLabel').style.display = 'block';
-    tl.innerHTML = tasks.map(t => {
-      const isDone = !!state[t.id];
-      return `<div class="task-card${isDone?' done':''}" onclick="toggle('${t.id}')" id="card_${t.id}">
-        <div class="task-check"><span class="check-icon">✓</span></div>
-        <div class="task-body">
-          <div class="task-title">${t.title}</div>
-          <div class="task-sub">${t.sub}</div>
-        </div>
-        <div class="task-tag tag-${t.tag}">${t.tag.toUpperCase()}</div>
-      </div>`;
-    }).join('');
-  }
-
-  // Streak
+    const diff=Math.ceil((FIRE_DATE-new Date())/(1000*60*60*24));
+    document.getElementById('doneFire').textContent='FIREまであと '+diff.toLocaleString()+' 日。身体を整えながら着実に前進。';
+  }else{ad.classList.remove('show');}
   renderStreak();
 }
 
-// ════════════════════════════════════════
-// STREAK
-// ════════════════════════════════════════
-function renderStreak() {
-  const data = load();
-  const now  = new Date();
-  const days = [];
-  for (let i=29; i>=0; i--) {
-    const d = new Date(now); d.setDate(now.getDate()-i);
-    days.push(d.toISOString().slice(0,10));
-  }
-  const TOTAL = DAILY_TASKS.length;
-  let streak  = 0;
-  const dots  = days.map(d => {
-    const s    = data[d] || {};
-    const done = Object.values(s).filter(Boolean).length;
-    const p    = TOTAL ? done/TOTAL : 0;
-    return { d, lv: p===0?0:p<.34?1:p<.67?2:p<1?3:4 };
-  });
-  for (let i=dots.length-1; i>=0; i--) {
-    if (dots[i].lv >= 2) streak++;
-    else break;
-  }
-  document.getElementById('streakDots').innerHTML =
-    dots.map(({d,lv}) => `<div class="sdot l${lv}" title="${d}"></div>`).join('');
-  document.getElementById('streakLabel').textContent = `${streak}日連続`;
-  document.getElementById('streakChip').textContent  = `連続 ${streak}日`;
+function renderStreak(){
+  const data=load(),now=new Date(),days=[];
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(now.getDate()-i);days.push(d.toISOString().slice(0,10));}
+  const TOTAL=getAllTasks().length;let streak=0;
+  const dots=days.map(d=>{const s=data[d]||{};const done=Object.values(s).filter(Boolean).length;const p=TOTAL?done/TOTAL:0;return{d,lv:p===0?0:p<.34?1:p<.67?2:p<1?3:4};});
+  for(let i=dots.length-1;i>=0;i--){if(dots[i].lv>=2)streak++;else break;}
+  document.getElementById('streakDots').innerHTML=dots.map(({d,lv})=>'<div class="sdot l'+lv+'" title="'+d+'"></div>').join('');
+  document.getElementById('streakLabel').textContent=streak+'日連続';
+  document.getElementById('streakChip').textContent='連続 '+streak+'日';
 }
 
-// ════════════════════════════════════════
-// TOAST
-// ════════════════════════════════════════
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
+function renderAll(){
+  const now=new Date(),diff=Math.ceil((FIRE_DATE-now)/(1000*60*60*24));
+  document.getElementById('fireCd').textContent=diff.toLocaleString();
+  document.getElementById('dateLabel').textContent=now.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
+  renderKpi();renderFxInput();renderMed();renderWeight();renderExercise();checkMonthEnd();renderTasks();
 }
 
-// ════════════════════════════════════════
-// INIT
-// ════════════════════════════════════════
-render();
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+renderAll();
 </script>
 </body>
 </html>
